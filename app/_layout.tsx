@@ -1,24 +1,31 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { MD3LightTheme, PaperProvider } from "react-native-paper";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
+// Custom theme matching cookbookmanager.com aesthetic
+const theme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: "#FF6B6B",
+    secondary: "#4ECDC4",
+    background: "#FFFFFF",
+    surface: "#FFFFFF",
+    surfaceVariant: "#F5F5F5",
+    error: "#FF5252",
+    onPrimary: "#FFFFFF",
+    onSecondary: "#FFFFFF",
+    onBackground: "#333333",
+    onSurface: "#333333",
+  },
+  roundness: 16,
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
+    <PaperProvider theme={theme}>
       <StatusBar style="auto" />
-    </ThemeProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </PaperProvider>
   );
 }
