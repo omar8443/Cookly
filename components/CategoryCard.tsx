@@ -66,19 +66,14 @@ export default function CategoryCard({
           end={{ x: 1, y: 1 }}
           style={styles.categoryCard}
         >
-          {imageUri ? (
-            <View style={styles.photoWrapper}>
-              <Image source={{ uri: imageUri }} style={styles.photoImage} />
-            </View>
-          ) : (
-            <Text style={styles.categoryEmoji}>{emoji}</Text>
-          )}
-          <Text variant="titleMedium" style={styles.categoryCardTitle}>
-            {name}
-          </Text>
-          <Text style={styles.categoryCount}>
-            {recipeCount} {recipeCount === 1 ? "recipe" : "recipes"}
-          </Text>
+          <View style={styles.content}>
+            <Text variant="titleMedium" style={styles.categoryCardTitle} numberOfLines={1}>
+              {name}
+            </Text>
+            <Text style={styles.categoryCount}>
+              {recipeCount} {recipeCount === 1 ? "recipe" : "recipes"}
+            </Text>
+          </View>
         </LinearGradient>
       </TouchableOpacity>
     </Animated.View>
@@ -92,8 +87,6 @@ const styles = StyleSheet.create({
   categoryCard: {
     borderRadius: CATEGORY_SCREEN_TOKENS.cardRadius,
     padding: CATEGORY_SCREEN_TOKENS.cardPadding,
-    alignItems: "center",
-    justifyContent: "center",
     minHeight: 168,
     backgroundColor: "rgba(15, 23, 42, 0.55)",
     borderWidth: 1,
@@ -101,9 +94,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...CATEGORY_SCREEN_TOKENS.cardShadow,
   },
-  categoryEmoji: {
-    fontSize: 56,
-    marginBottom: 10,
+  content: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-start",
   },
   photoWrapper: {
     width: 72,
@@ -131,8 +125,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: CATEGORY_SCREEN_TOKENS.cardTitleFontSize,
-    marginBottom: 6,
-    textAlign: "center",
+    marginBottom: 4,
+    textAlign: "left",
   },
   categoryCount: {
     color: "#FFFFFF",

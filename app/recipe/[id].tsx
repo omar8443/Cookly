@@ -128,6 +128,19 @@ export default function RecipeDetailScreen() {
               </TouchableOpacity>
             </View>
 
+            {recipe.imageUrl && (
+              <View style={styles.heroImageContainer}>
+                <ImageBackground
+                  source={{ uri: recipe.imageUrl }}
+                  style={styles.heroImage}
+                  imageStyle={styles.heroImageRadius}
+                  resizeMode="cover"
+                >
+                  <View style={styles.heroOverlay} />
+                </ImageBackground>
+              </View>
+            )}
+
             {/* Content */}
             <View style={styles.content}>
               {/* Title */}
@@ -309,6 +322,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
+  },
+  heroImageContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  heroImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  heroImageRadius: {
+    borderRadius: 24,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.12)",
   },
   backButton: {
     width: 40,

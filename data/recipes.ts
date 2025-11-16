@@ -24,6 +24,7 @@ export type Recipe = {
   category: string; // e.g. "Chicken", "Beef", "Vegetarian"
   cuisine: string;
   timeMinutes: number; // approximate total cook time
+  imageUrl?: string; // optional photo URL for the recipe card
   ingredients: string[];
   instructions?: string[]; // step-by-step cooking instructions (optional for older entries)
   macros: {
@@ -3056,7 +3057,7 @@ import type { Recipe as LegacyRecipe } from "@/types/recipe";
 const toLegacyRecipe = (recipe: Recipe): LegacyRecipe => ({
   id: String(recipe.id),
   title: recipe.name,
-  imageUrl: undefined,
+  imageUrl: recipe.imageUrl,
   category: recipe.category,
   description: `${recipe.cuisine} · ${recipe.category}`,
   cookTime: `${recipe.timeMinutes} min`,

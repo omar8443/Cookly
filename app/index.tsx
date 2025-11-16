@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  ImageBackground,
 } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import { useRouter } from "expo-router";
@@ -15,8 +16,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import BottomNav from "@/components/BottomNav";
 import CategoryCard from "@/components/CategoryCard";
-import { getCategories as getRecipeCategories, getRecipesByCategory } from "@/data/recipes";
-import { COLORS } from "@/constants/colors";
+import RecipeGrid from "@/components/RecipeGrid";
+import {
+  getAllRecipes,
+  getCategories as getRecipeCategories,
+  getRecipesByCategory,
+} from "@/data/recipes";
+import { COLORS, COOKING_BACKGROUND_IMAGE } from "@/constants/colors";
 import { commonBackgroundStyles, CATEGORY_SCREEN_TOKENS } from "@/constants/styles";
 
 // Emoji mapping by recipe category name
@@ -38,6 +44,25 @@ const categories = getRecipeCategories().map((categoryName) => ({
   recipeCount: getRecipesByCategory(categoryName).length,
 }));
 
+// Derive stable category hero images from the first recipe in each category.
+// This reuses the Pexels-backed recipe images generated in data/recipes.ts,
+// so categories also benefit from the same image system without extra API calls.
+const CATEGORY_IMAGES: Record<string, string | undefined> = categories.reduce(
+  (acc, category) => {
+    const recipesInCategory = getRecipesByCategory(category.name);
+    acc[category.name] = recipesInCategory[0]?.imageUrl;
+    return acc;
+  },
+  {} as Record<string, string | undefined>
+);
+
+// Helper to get a randomized set of featured recipes for the floating grid
+const getRandomFeaturedRecipes = (count: number = 12) => {
+  const allRecipes = getAllRecipes();
+  const shuffled = [...allRecipes].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+};
+
 const { width } = Dimensions.get("window");
 const CARD_PADDING = 22;
 const CARD_GAP = 12;
@@ -55,6 +80,7 @@ export default function HomeScreen() {
   // Animation for Add Recipe button press
   const addButtonScale = useRef(new Animated.Value(1)).current;
   const cardEntrance = useRef(categories.map(() => new Animated.Value(0))).current;
+  const [featuredRecipes, setFeaturedRecipes] = useState(getRandomFeaturedRecipes);
 
   const handleCategoryPress = (categoryId: string) => {
     router.push(`/category/${categoryId}` as any);
@@ -79,6 +105,10 @@ export default function HomeScreen() {
     // TODO: Navigate to add recipe screen
   };
 
+  const handleRecipePress = (recipeId: string) => {
+    router.push(`/recipe/${recipeId}` as any);
+  };
+
   useEffect(() => {
     Animated.stagger(
       90,
@@ -94,100 +124,114 @@ export default function HomeScreen() {
   }, [cardEntrance]);
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView style={commonBackgroundStyles.safeArea} edges={["top"]}>
-        <ScrollView
-          style={commonBackgroundStyles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
-            <Text variant="headlineLarge" style={styles.title}>
-              Categories
-            </Text>
-            <View style={styles.titleUnderline} />
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              What are you feeling today?
-            </Text>
-          </View>
+    <View style={commonBackgroundStyles.container}>
+      <ImageBackground
+        source={{ uri: COOKING_BACKGROUND_IMAGE }}
+        style={commonBackgroundStyles.backgroundImage}
+        resizeMode="cover"
+      >
+        <View style={commonBackgroundStyles.overlay} />
+        <SafeAreaView style={commonBackgroundStyles.safeArea} edges={["top"]}>
+          <ScrollView
+            style={commonBackgroundStyles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Floating Recipes Section */}
+            <View style={styles.header}>
+              <Text variant="headlineLarge" style={styles.title}>
+                Cookly
+              </Text>
+              <View style={styles.titleUnderline} />
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                Discover something delicious tonight.
+              </Text>
+            </View>
 
-          <View style={styles.categoriesGrid}>
-            {categories.map((category, index) => {
-              const animatedValue = cardEntrance[index];
-              const animatedStyle = {
-                opacity: animatedValue,
-                transform: [
-                  {
-                    translateY: animatedValue.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [24, 0],
-                    }),
-                  },
-                ],
-              };
+            <RecipeGrid recipes={featuredRecipes} onRecipePress={handleRecipePress} />
 
-              return (
-                <CategoryCard
-                  key={category.id}
-                  id={category.id}
-                  name={category.name}
-                  emoji={category.emoji}
-                  recipeCount={category.recipeCount}
-                  onPress={() => handleCategoryPress(category.id)}
-                  width={CARD_WIDTH}
-                  containerStyle={animatedStyle}
-                />
-              );
-            })}
-          </View>
-        </ScrollView>
+            {/* Categories Section */}
+            <View style={styles.sectionHeader}>
+              <Text variant="titleLarge" style={styles.sectionTitle}>
+                Categories
+              </Text>
+            </View>
 
-        {/* Modern Floating Add Recipe Button */}
-        <Animated.View
-          style={[styles.addButtonWrapper, { transform: [{ scale: addButtonScale }] }]}
-        >
-          <View style={styles.addButtonBlur}>
-            <TouchableOpacity onPress={handleAddRecipe} activeOpacity={0.88}>
-              <LinearGradient
-                colors={CATEGORY_SCREEN_TOKENS.primaryGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.addButtonGradient}
-              >
-                <MaterialCommunityIcons name="plus" size={22} color="#FFFFFF" />
-                <Text style={styles.addButtonText}>Add Recipe</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
+            <View style={styles.categoriesGrid}>
+              {categories.map((category, index) => {
+                const animatedValue = cardEntrance[index];
+                const animatedStyle = {
+                  opacity: animatedValue,
+                  transform: [
+                    {
+                      translateY: animatedValue.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [24, 0],
+                      }),
+                    },
+                  ],
+                };
 
-        <BottomNav />
-      </SafeAreaView>
+                return (
+                  <CategoryCard
+                    key={category.id}
+                    id={category.id}
+                    name={category.name}
+                    emoji={category.emoji}
+                    recipeCount={category.recipeCount}
+                    imageUri={CATEGORY_IMAGES[category.name]}
+                    onPress={() => handleCategoryPress(category.id)}
+                    width={CARD_WIDTH}
+                    containerStyle={animatedStyle}
+                  />
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {/* Floating Add Recipe Button */}
+          <Animated.View
+            style={[styles.addButtonWrapper, { transform: [{ scale: addButtonScale }] }]}
+          >
+            <View style={styles.addButtonBlur}>
+              <TouchableOpacity onPress={handleAddRecipe} activeOpacity={0.88}>
+                <LinearGradient
+                  colors={CATEGORY_SCREEN_TOKENS.primaryGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.addButtonGradient}
+                >
+                  <MaterialCommunityIcons name="plus" size={22} color="#FFFFFF" />
+                  <Text style={styles.addButtonText}>Add Recipe</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+
+          <BottomNav />
+        </SafeAreaView>
+      </ImageBackground>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
   scrollContent: {
     paddingBottom: 160,
   },
   header: {
     paddingHorizontal: 24,
     paddingTop: 26,
-    paddingBottom: 26,
-    alignItems: "center",
+    paddingBottom: 18,
+    alignItems: "flex-start",
   },
   title: {
     fontWeight: "600",
     fontSize: CATEGORY_SCREEN_TOKENS.titleFontSize,
     letterSpacing: -0.8,
-    color: COLORS.textMain,
+    color: COLORS.textPrimary,
     marginBottom: 8,
-    textAlign: "center",
+    textAlign: "left",
   },
   titleUnderline: {
     width: 60,
@@ -198,11 +242,11 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: CATEGORY_SCREEN_TOKENS.subtitleFontSize,
-    color: COLORS.textMuted,
-    opacity: 1,
+    color: COLORS.textPrimary,
+    opacity: 0.8,
     fontWeight: "400",
     lineHeight: 22,
-    textAlign: "center",
+    textAlign: "left",
   },
   categoriesGrid: {
     flexDirection: "row",
@@ -210,6 +254,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: CARD_PADDING,
     gap: CARD_GAP,
     justifyContent: "space-between",
+  },
+  sectionHeader: {
+    paddingHorizontal: 24,
+    paddingTop: 6,
+    paddingBottom: 12,
+  },
+  sectionTitle: {
+    color: COLORS.textPrimary,
+    fontWeight: "600",
   },
   addButtonWrapper: {
     position: "absolute",

@@ -1,10 +1,9 @@
-import { Recipe } from "@/types/recipe";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useRef } from "react";
-import { Image, StyleSheet, TouchableOpacity, View, Animated, Dimensions } from "react-native";
-import { Card, Chip, Text, useTheme } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "@/constants/colors";
+import { Recipe } from "@/types/recipe";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useRef, useState } from "react";
+import { Animated, Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text, useTheme } from "react-native-paper";
 
 // Support both old interface (for backwards compatibility) and new interface
 interface RecipeCardPropsNew {
@@ -61,6 +60,8 @@ export default function RecipeCard(props: RecipeCardProps) {
   
   // Animation for card press interaction
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const imageOpacity = useRef(new Animated.Value(0)).current;
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -80,6 +81,15 @@ export default function RecipeCard(props: RecipeCardProps) {
     }).start();
   };
 
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    Animated.timing(imageOpacity, {
+      toValue: 1,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
     <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
       <TouchableOpacity 
@@ -91,12 +101,16 @@ export default function RecipeCard(props: RecipeCardProps) {
       >
         <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <View style={[styles.imageContainer, { height }]}>
+            <View style={styles.skeletonContainer}>
+              {!imageLoaded && <View style={styles.skeleton} />}
+            </View>
             {recipe.imageUrl ? (
               <>
-                <Image 
-                  source={{ uri: recipe.imageUrl }} 
-                  style={styles.image} 
+                <Animated.Image
+                  source={{ uri: recipe.imageUrl }}
+                  style={[styles.image, { opacity: imageOpacity }]}
                   resizeMode="cover"
+                  onLoad={handleImageLoad}
                 />
                 <LinearGradient
                   colors={["transparent", "rgba(0,0,0,0.2)", "rgba(0,0,0,0.6)", "rgba(0,0,0,0.8)"]}
@@ -128,7 +142,6 @@ export default function RecipeCard(props: RecipeCardProps) {
               </>
             ) : (
               <View style={[styles.placeholderImage, { backgroundColor: theme.colors.surfaceVariant }]}>
-                <Text style={styles.placeholderText}>📷</Text>
                 <View style={styles.titleOverlay}>
                   <Text variant="titleMedium" style={styles.titleOnImage} numberOfLines={2}>
                     {recipe.title}
@@ -168,6 +181,17 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
     overflow: "hidden",
+  },
+  skeletonContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  skeleton: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 24,
+    backgroundColor: "rgba(148, 163, 184, 0.35)",
   },
   image: {
     width: "100%",

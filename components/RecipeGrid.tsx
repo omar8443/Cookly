@@ -42,9 +42,9 @@ export default function RecipeGrid({ recipes, onRecipePress }: RecipeGridProps) 
   return (
     <View style={styles.container}>
       <View style={styles.column}>
-        {leftColumn.map((recipe) => (
+        {leftColumn.map((recipe, index) => (
           <RecipeCard
-            key={recipe.id}
+            key={`${recipe.id}-left-${index}`}
             id={recipe.id}
             title={recipe.title}
             imageUrl={recipe.imageUrl}
@@ -56,9 +56,9 @@ export default function RecipeGrid({ recipes, onRecipePress }: RecipeGridProps) 
         ))}
       </View>
       <View style={styles.column}>
-        {rightColumn.map((recipe) => (
+        {rightColumn.map((recipe, index) => (
           <RecipeCard
-            key={recipe.id}
+            key={`${recipe.id}-right-${index}`}
             id={recipe.id}
             title={recipe.title}
             imageUrl={recipe.imageUrl}
