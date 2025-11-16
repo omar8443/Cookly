@@ -102,8 +102,27 @@ export default function RecipeCard(props: RecipeCardProps) {
                     </Text>
                   </View>
                 )}
+
               </View>
             )}
+
+            {/* Delivery estimate based on recipe time */}
+            <View style={[styles.metaRow, styles.deliveryRow]}>
+              <View style={styles.metaItem}>
+                <MaterialCommunityIcons
+                  name="bike-fast"
+                  size={12}
+                  color={COLORS.black}
+                  style={styles.metaIcon}
+                />
+                <Text
+                  variant="bodySmall"
+                  style={[styles.deliveryText, { color: COLORS.black }]}
+                >
+                  Est. delivery: {recipe.totalTime || 25}–{(recipe.totalTime || 25) + 10} min
+                </Text>
+              </View>
+            </View>
 
             {/* Filter tags */}
             {recipe.filters.length > 0 && (
@@ -180,8 +199,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
+  metaIcon: {
+    marginRight: 4,
+  },
   metaText: {
     fontSize: 12,
+  },
+  deliveryText: {
+    fontSize: 10,
+  },
+  deliveryRow: {
+    marginTop: 6,
   },
   costText: {
     fontSize: 12,

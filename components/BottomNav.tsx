@@ -45,7 +45,7 @@ export default function BottomNav() {
               <MaterialCommunityIcons
                 name={item.icon as any}
                 size={24}
-                color={active ? COLORS.primary : COLORS.textMuted}
+                color={active ? COLORS.white : COLORS.textMuted}
               />
             </TouchableOpacity>
           );

@@ -37,6 +37,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS, PROFILE_BACKGROUND_IMAGE } from "@/constants/colors";
 import { commonBackgroundStyles } from "@/constants/styles";
 
+const PROFILE_PRIMARY = "#1d4ed8"; // Dark blue accent for profile screen
+
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 52) / 2; // 2 columns with padding and gap
 
@@ -166,7 +168,7 @@ export default function ProfileScreen() {
 
   const renderStatsCard = (icon: string, value: string | number, label: string, color?: string) => (
     <View style={styles.quickStatItem}>
-      <Text style={[styles.quickStatValue, { color: color || COLORS.primary }]}>{value}</Text>
+      <Text style={[styles.quickStatValue, { color: color || PROFILE_PRIMARY }]}>{value}</Text>
       <Text style={[styles.quickStatLabel, { color: COLORS.textMuted }]}>{label}</Text>
     </View>
   );
@@ -238,11 +240,11 @@ export default function ProfileScreen() {
                 style={styles.headerAvatarTouch}
                 onPress={() => router.push("/edit-profile" as any)}
               >
-                <View style={[styles.headerAvatarContainer, { backgroundColor: COLORS.primary + "20" }]}>
+                <View style={[styles.headerAvatarContainer, { backgroundColor: PROFILE_PRIMARY + "20" }]}>
                   {photoURL ? (
                     <Image source={{ uri: photoURL }} style={styles.headerAvatarImage} />
                   ) : (
-                    <Text style={[styles.headerAvatarText, { color: COLORS.primary }]}>
+                    <Text style={[styles.headerAvatarText, { color: COLORS.white }]}>
                       {displayName.charAt(0).toUpperCase()}
                     </Text>
                   )}
@@ -284,7 +286,7 @@ export default function ProfileScreen() {
                         <Chip
                           key={index}
                           mode="flat"
-                          style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]}
+                          style={[styles.tagChip, { backgroundColor: PROFILE_PRIMARY + "20" }]}
                           textStyle={styles.tagText}
                         >
                           {tag}
@@ -292,7 +294,7 @@ export default function ProfileScreen() {
                       ))}
                       <Chip
                         mode="flat"
-                        style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]}
+                        style={[styles.tagChip, { backgroundColor: PROFILE_PRIMARY + "20" }]}
                         textStyle={styles.tagText}
                       >
                         {budgetLabel}
@@ -305,7 +307,7 @@ export default function ProfileScreen() {
 
             {/* Cooking Activity Dashboard */}
             <View style={[styles.section, styles.sectionTightBelow]}>
-              <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.primary }]}>
+              <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>
                 Cooking Activity
               </Text>
 
@@ -318,7 +320,7 @@ export default function ProfileScreen() {
                   })(),
                   "Cook consistently to keep your streak going.",
                   "fire",
-                  "#FF9800"
+                  PROFILE_PRIMARY
                 )}
               </View>
             </View>
@@ -326,7 +328,7 @@ export default function ProfileScreen() {
             {/* Past Orders Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeaderTight}>
-                <Text variant="titleLarge" style={[styles.sectionTitleTight, { color: COLORS.primary }]}>
+                <Text variant="titleLarge" style={[styles.sectionTitleTight, { color: COLORS.textPrimary }]}>
                   Past Orders
                 </Text>
               </View>
@@ -361,14 +363,14 @@ export default function ProfileScreen() {
 
             {/* Preferences */}
             <View style={styles.section}>
-              <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.primary }]}>
+              <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>
                 Preferences
               </Text>
 
               <Card style={styles.preferencesCard}>
                 <Card.Content>
                   <View style={styles.preferenceRow}>
-                    <MaterialCommunityIcons name="food-variant" size={20} color={COLORS.primary} />
+                    <MaterialCommunityIcons name="food-variant" size={20} color={PROFILE_PRIMARY} />
                     <View style={styles.preferenceContent}>
                       <Text variant="titleSmall" style={{ color: COLORS.textPrimary }}>Dietary Preferences</Text>
                       <View style={styles.chipsRow}>
@@ -384,7 +386,7 @@ export default function ProfileScreen() {
                   <Divider style={styles.preferenceDivider} />
 
                   <View style={styles.preferenceRow}>
-                    <MaterialCommunityIcons name="currency-usd" size={20} color={COLORS.primary} />
+                    <MaterialCommunityIcons name="currency-usd" size={20} color={PROFILE_PRIMARY} />
                     <View style={styles.preferenceContent}>
                       <Text variant="titleSmall" style={{ color: COLORS.textPrimary }}>Budget Range</Text>
                       <View style={styles.preferenceValueContainer}>
@@ -410,7 +412,7 @@ export default function ProfileScreen() {
                   <Divider style={styles.preferenceDivider} />
 
                   <View style={styles.preferenceRow}>
-                    <MaterialCommunityIcons name="account-group" size={20} color={COLORS.primary} />
+                    <MaterialCommunityIcons name="account-group" size={20} color={PROFILE_PRIMARY} />
                     <View style={styles.preferenceContent}>
                       <Text variant="titleSmall" style={{ color: COLORS.textPrimary }}>Default Serving Size</Text>
                       <View style={styles.preferenceValueContainer}>
@@ -444,7 +446,7 @@ export default function ProfileScreen() {
             <View style={styles.section}>
               <Text
                 variant="titleLarge"
-                style={[styles.sectionTitle, { color: COLORS.primary }]}
+                style={[styles.sectionTitle, { color: COLORS.textPrimary }]}
               >
                 Pantry
               </Text>

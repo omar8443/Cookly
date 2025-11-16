@@ -359,6 +359,22 @@ export default function RecipeDetailScreen() {
                         {storeEstimates.map((estimate) => {
                           const isSelected =
                             estimate.store.id === selectedStoreId;
+                          const baseTime = recipe.totalTime || 25;
+                          const storeTimeOffset = (() => {
+                            switch (estimate.store.id) {
+                              case "provigo":
+                                return 0;
+                              case "maxi":
+                                return 5;
+                              case "iga":
+                                return 10;
+                              default:
+                                return 0;
+                            }
+                          })();
+                          const minTime = baseTime + storeTimeOffset;
+                          const maxTime = minTime + 10;
+
                           return (
                             <TouchableOpacity
                               key={estimate.store.id}
@@ -387,6 +403,12 @@ export default function RecipeDetailScreen() {
                                 ]}
                               >
                                 ${estimate.totalPrice.toFixed(2)}
+                              </Text>
+                              <Text
+                                variant="bodySmall"
+                                style={styles.storeDeliveryTime}
+                              >
+                                {minTime}–{maxTime} min delivery
                               </Text>
                               {estimate.isCheapest && (
                                 <View style={styles.cheapestBadge}>
@@ -822,6 +844,12 @@ const styles = StyleSheet.create({
   },
   storePrice: {
     fontWeight: "700",
+  },
+  storeDeliveryTime: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.textMuted,
   },
   cheapestBadge: {
     marginTop: 6,
