@@ -1,9 +1,8 @@
-import { COLORS } from "@/constants/colors";
 import { Recipe } from "@/types/recipe";
-import { LinearGradient } from "expo-linear-gradient";
-import React, { useRef, useState } from "react";
-import { Animated, Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React from "react";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Card, Chip, Text, useTheme } from "react-native-paper";
 
 // Support both old interface (for backwards compatibility) and new interface
 interface RecipeCardPropsNew {
@@ -16,10 +15,11 @@ interface RecipeCardPropsOld {
   id: string;
   title: string;
   imageUrl?: string;
-  category?: string;
   cookTime?: string;
-  height?: number;
+  cost?: string;
+  filters?: Recipe["filters"];
   onPress: () => void;
+  height?: number;
 }
 
 type RecipeCardProps = RecipeCardPropsNew | RecipeCardPropsOld;
@@ -29,12 +29,9 @@ function isNewFormat(props: RecipeCardProps): props is RecipeCardPropsNew {
   return "recipe" in props;
 }
 
-const { width } = Dimensions.get("window");
-const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
-
 export default function RecipeCard(props: RecipeCardProps) {
   const theme = useTheme();
-  
+
   // Handle both old and new prop formats
   const recipe: Recipe = isNewFormat(props)
     ? props.recipe
@@ -42,225 +39,176 @@ export default function RecipeCard(props: RecipeCardProps) {
         id: props.id,
         title: props.title,
         imageUrl: props.imageUrl,
-        category: props.category || "",
+        category: "",
         description: "",
         cookTime: props.cookTime || "",
         prepTime: 0,
         totalTime: 0,
         servings: 0,
         difficulty: "Easy",
-        cost: "$",
-        filters: [],
+        cost: (props.cost as any) || "$",
+        filters: props.filters || [],
         ingredients: [],
         instructions: [],
       };
-  
+
   const onPress = props.onPress;
-  const height = props.height || 220;
-  
-  // Animation for card press interaction
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const imageOpacity = useRef(new Animated.Value(0)).current;
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1.02,
-      useNativeDriver: true,
-      tension: 300,
-      friction: 10,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 300,
-      friction: 10,
-    }).start();
-  };
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-    Animated.timing(imageOpacity, {
-      toValue: 1,
-      duration: 280,
-      useNativeDriver: true,
-    }).start();
-  };
+  const height = props.height ?? 160;
 
   return (
-    <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
-      <TouchableOpacity 
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={1}
-        style={styles.touchable}
-      >
-        <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <View style={[styles.imageContainer, { height }]}>
-            <View style={styles.skeletonContainer}>
-              {!imageLoaded && <View style={styles.skeleton} />}
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.imageContainer, { height }]}>
+          {recipe.imageUrl ? (
+            <Image source={{ uri: recipe.imageUrl }} style={styles.image} resizeMode="cover" />
+          ) : (
+            <View style={[styles.placeholderImage, { backgroundColor: theme.colors.surfaceVariant }]}>
+              <MaterialCommunityIcons
+                name="chef-hat"
+                size={48}
+                color={theme.colors.onSurfaceVariant}
+              />
             </View>
-            {recipe.imageUrl ? (
-              <>
-                <Animated.Image
-                  source={{ uri: recipe.imageUrl }}
-                  style={[styles.image, { opacity: imageOpacity }]}
-                  resizeMode="cover"
-                  onLoad={handleImageLoad}
+          )}
+        </View>
+        <Card.Content style={styles.content}>
+          <View style={styles.contentInner}>
+            <Text variant="titleMedium" style={styles.title} numberOfLines={2}>
+              {recipe.title}
+            </Text>
+
+            {/* Meta tags row */}
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <MaterialCommunityIcons
+                  name="clock-outline"
+                  size={16}
+                  color={theme.colors.onSurfaceVariant}
                 />
-                <LinearGradient
-                  colors={["transparent", "rgba(0,0,0,0.2)", "rgba(0,0,0,0.6)", "rgba(0,0,0,0.8)"]}
-                  style={styles.imageOverlay}
+                <Text
+                  variant="bodySmall"
+                  style={[styles.metaText, { color: theme.colors.onSurfaceVariant }]}
                 >
-                  {recipe.category && (
-                    <LinearGradient
-                      colors={COLORS.primaryGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.categoryBadge}
-                    >
-                      <Text style={styles.categoryText} numberOfLines={1}>
-                        {recipe.category.toUpperCase()}
-                      </Text>
-                    </LinearGradient>
-                  )}
-                  <View style={styles.titleOverlay}>
-                    <Text variant="titleMedium" style={styles.titleOnImage} numberOfLines={2}>
-                      {recipe.title}
-                    </Text>
-                    {recipe.cookTime && (
-                      <View style={styles.metaInfo}>
-                        <Text style={styles.cookTime}>{recipe.cookTime}</Text>
-                      </View>
-                    )}
-                  </View>
-                </LinearGradient>
-              </>
-            ) : (
-              <View style={[styles.placeholderImage, { backgroundColor: theme.colors.surfaceVariant }]}>
-                <View style={styles.titleOverlay}>
-                  <Text variant="titleMedium" style={styles.titleOnImage} numberOfLines={2}>
-                    {recipe.title}
+                  {recipe.cookTime}
+                </Text>
+              </View>
+
+              {recipe.cost && (
+                <View style={styles.metaItem}>
+                  <Text
+                    variant="bodySmall"
+                    style={[styles.costText, { color: theme.colors.primary }]}
+                  >
+                    {recipe.cost}
                   </Text>
                 </View>
+              )}
+            </View>
+
+            {/* Filter tags */}
+            {recipe.filters.length > 0 && (
+              <View style={styles.tagsContainer}>
+                {recipe.filters.slice(0, 2).map((filter) => (
+                  <Chip
+                    key={filter}
+                    mode="flat"
+                    compact
+                    style={[styles.tag, { backgroundColor: theme.colors.primaryContainer }]}
+                    textStyle={[styles.tagText, { color: theme.colors.onPrimaryContainer }]}
+                  >
+                    {filter}
+                  </Chip>
+                ))}
+                {recipe.filters.length > 2 && (
+                  <Text
+                    variant="bodySmall"
+                    style={[styles.moreTags, { color: theme.colors.onSurfaceVariant }]}
+                  >
+                    +{recipe.filters.length - 2}
+                  </Text>
+                )}
               </View>
             )}
           </View>
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
+        </Card.Content>
+      </Card>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    width: CARD_WIDTH,
-    marginBottom: 16,
-  },
-  touchable: {
-    width: "100%",
-  },
   card: {
-    borderRadius: 24,
-    overflow: "hidden",
-    elevation: 8,
-    shadowColor: "rgba(15, 23, 42, 0.18)",
+    marginBottom: 12,
+    borderRadius: 16,
+    elevation: 3,
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: 2,
     },
-    shadowOpacity: 1,
-    shadowRadius: 30,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    overflow: "hidden",
   },
   imageContainer: {
     width: "100%",
-    position: "relative",
     overflow: "hidden",
-  },
-  skeletonContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  skeleton: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 24,
-    backgroundColor: "rgba(148, 163, 184, 0.35)",
   },
   image: {
     width: "100%",
     height: "100%",
   },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
-    padding: 12,
-  },
-  categoryBadge: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    maxWidth: "70%",
-    shadowColor: COLORS.primaryDark,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  categoryText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  titleOverlay: {
-    width: "100%",
-  },
-  titleOnImage: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-    lineHeight: 22,
-    textShadowColor: "rgba(0, 0, 0, 0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-    marginBottom: 4,
-  },
-  metaInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  cookTime: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    opacity: 0.9,
-    fontWeight: "500",
-  },
   placeholderImage: {
     width: "100%",
     height: "100%",
-    justifyContent: "flex-end",
+    justifyContent: "center",
     alignItems: "center",
-    padding: 12,
-    backgroundColor: COLORS.bg,
   },
-  placeholderText: {
-    fontSize: 48,
-    position: "absolute",
-    top: "30%",
-    opacity: 0.3,
+  content: {
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  contentInner: {
+    paddingBottom: 0,
+  },
+  title: {
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  metaText: {
+    fontSize: 12,
+  },
+  costText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    marginTop: 4,
+    paddingBottom: 2,
+  },
+  tag: {
+    marginRight: 6,
+    marginBottom: 4,
+    marginTop: 0,
+  },
+  tagText: {
+    fontSize: 11,
+  },
+  moreTags: {
+    fontSize: 11,
+    marginLeft: 4,
   },
 });

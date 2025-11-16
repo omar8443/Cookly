@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -21,7 +22,7 @@ import RecipeCard from "@/components/RecipeCard";
 import { getAllRecipes } from "@/data/recipes";
 import { useRecipeSearch } from "@/hooks/useRecipeSearch";
 import { Recipe, SearchFilters } from "@/types/recipe";
-import { COLORS } from "@/constants/colors";
+import { COLORS, SEARCH_BACKGROUND_IMAGE } from "@/constants/colors";
 import { commonBackgroundStyles } from "@/constants/styles";
 
 // Get all recipes from centralized database
@@ -89,14 +90,20 @@ export default function SearchScreen() {
   const showIdleState = state === "idle" && !hasQuery && !hasActiveFilters;
 
   return (
-    <View style={[commonBackgroundStyles.container, { backgroundColor: COLORS.bg }]}>
-      <SafeAreaView style={commonBackgroundStyles.safeArea} edges={["top"]}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardView}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        >
-          <View style={styles.content}>
+    <View style={commonBackgroundStyles.container}>
+      <ImageBackground
+        source={{ uri: SEARCH_BACKGROUND_IMAGE }}
+        style={commonBackgroundStyles.backgroundImage}
+        resizeMode="cover"
+      >
+        <View style={commonBackgroundStyles.overlay} />
+        <SafeAreaView style={commonBackgroundStyles.safeArea} edges={["top"]}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardView}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          >
+            <View style={styles.content}>
               {/* Search Bar - Always visible */}
               <View style={styles.searchContainer}>
                 <Card style={styles.searchCard}>
@@ -244,11 +251,12 @@ export default function SearchScreen() {
                   )}
                 </ScrollView>
               )}
-          </View>
-        </KeyboardAvoidingView>
+            </View>
+          </KeyboardAvoidingView>
 
-        <BottomNav />
-      </SafeAreaView>
+          <BottomNav />
+        </SafeAreaView>
+      </ImageBackground>
     </View>
   );
 }

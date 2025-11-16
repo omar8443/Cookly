@@ -3,32 +3,30 @@ import RecipeCard from "@/components/RecipeCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserStreak, UserStreakData } from "@/lib/streaks";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Dimensions, Image, ImageBackground, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Button, Card, Chip, Divider, List, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { COLORS, COOKING_BACKGROUND_IMAGE } from "@/constants/colors";
+import { COLORS, PROFILE_BACKGROUND_IMAGE } from "@/constants/colors";
 import { commonBackgroundStyles } from "@/constants/styles";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 52) / 2; // 2 columns with padding and gap
-const HERO_HEIGHT = height * 0.35; // Top 35% for hero gradient
 
-// Mock cooking stats
+// Lightweight cooking stats used only as fallback around real streak data
 const cookingStats = {
   dishesThisWeek: 7,
-  dishesLastWeek: 5,
   currentStreak: 5,
-  moneySavedThisWeek: 42,
-  moneySavedThisMonth: 156,
-  topCuisines: [
-    { name: "Italian", count: 12, flag: "🇮🇹" },
-    { name: "Mexican", count: 8, flag: "🇲🇽" },
-    { name: "Japanese", count: 5, flag: "🇯🇵" },
-  ],
-  totalDishesCooked: 87,
 };
 
 // Mock recipes
@@ -47,30 +45,6 @@ const recentlyCooked = [
   { id: "6", title: "Caesar Salad", imageUrl: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400", date: "2 days ago" },
   { id: "7", title: "Grilled Chicken", imageUrl: "https://images.unsplash.com/photo-1532550907401-a498c2d314b7?w=400", date: "3 days ago" },
 ];
-
-// Mock pantry items
-const pantryItems = [
-  { id: "1", name: "Olive Oil", icon: "🍶", inPantry: true },
-  { id: "2", name: "Garlic", icon: "🧄", inPantry: true },
-  { id: "3", name: "Flour", icon: "🌾", inPantry: true },
-  { id: "4", name: "Salt", icon: "🧂", inPantry: true },
-  { id: "5", name: "Pepper", icon: "🌶️", inPantry: false },
-  { id: "6", name: "Onions", icon: "🧅", inPantry: true },
-  { id: "7", name: "Rice", icon: "🍚", inPantry: false },
-  { id: "8", name: "Pasta", icon: "🍝", inPantry: true },
-];
-
-// Mock social data
-const socialData = {
-  friends: 12,
-  followers: 8,
-  following: 15,
-  communities: 3,
-  recentActivity: [
-    { type: "friend", name: "Sarah", action: "cooked Pasta Carbonara", time: "yesterday" },
-    { type: "community", name: "Montreal Vegan Group", action: "shared a new recipe", time: "2 hours ago" },
-  ],
-};
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -166,13 +140,19 @@ export default function ProfileScreen() {
   const skillLevel = (userData as any)?.skillLevel || "Beginner";
 
   return (
-    <View style={[commonBackgroundStyles.container, { backgroundColor: COLORS.bg }]}>
-      <SafeAreaView style={commonBackgroundStyles.safeArea} edges={["top"]}>
-        <ScrollView
-          style={commonBackgroundStyles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+    <View style={commonBackgroundStyles.container}>
+      <ImageBackground
+        source={{ uri: PROFILE_BACKGROUND_IMAGE }}
+        style={commonBackgroundStyles.backgroundImage}
+        resizeMode="cover"
+      >
+        <View style={commonBackgroundStyles.overlay} />
+        <SafeAreaView style={commonBackgroundStyles.safeArea} edges={["top"]}>
+          <ScrollView
+            style={commonBackgroundStyles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Profile Header Card */}
             <Card style={styles.profileHeaderCard}>
               <Card.Content style={styles.profileHeaderContent}>
@@ -226,9 +206,12 @@ export default function ProfileScreen() {
                 </ScrollView>
 
                 <View style={styles.quickStatsRow}>
-                  {renderStatsCard("🍳", cookingStats.dishesThisWeek, "This Week")}
-                  {renderStatsCard("🔥", `${streakData?.currentStreak ?? cookingStats.currentStreak}`, "Streak")}
-                  {renderStatsCard("💰", `$${cookingStats.moneySavedThisWeek}`, "Saved")}
+                  {renderStatsCard("🍳", cookingStats.dishesThisWeek, "This week")}
+                  {renderStatsCard(
+                    "🔥",
+                    `${streakData?.currentStreak ?? cookingStats.currentStreak}`,
+                    "Streak"
+                  )}
                 </View>
               </Card.Content>
             </Card>
@@ -241,44 +224,13 @@ export default function ProfileScreen() {
 
               <View style={styles.activityGrid}>
                 {renderActivityCard(
-                  "This Week",
-                  cookingStats.dishesThisWeek,
-                  `↑ ${cookingStats.dishesThisWeek - cookingStats.dishesLastWeek} more than last week`,
-                  "silverware-fork-knife",
-                  COLORS.accent
-                )}
-                {renderActivityCard(
                   "Streak",
                   `${streakData?.currentStreak ?? cookingStats.currentStreak} days`,
-                  "Keep it up! 2 more days for weekly badge",
+                  "Cook consistently to keep your streak going.",
                   "fire",
                   "#FF9800"
                 )}
-                {renderActivityCard(
-                  "Money Saved",
-                  `$${cookingStats.moneySavedThisWeek}`,
-                  `$${cookingStats.moneySavedThisMonth} this month`,
-                  "cash-multiple",
-                  COLORS.primary
-                )}
               </View>
-
-              <Card style={styles.cuisinesCard}>
-                <Card.Content>
-                  <Text variant="titleMedium" style={styles.cuisinesTitle}>Top Cuisines This Month</Text>
-                  <View style={styles.cuisinesRow}>
-                    {cookingStats.topCuisines.map((cuisine, index) => (
-                      <View key={index} style={styles.cuisineItem}>
-                        <Text style={styles.cuisineFlag}>{cuisine.flag}</Text>
-                        <Text variant="bodySmall" style={styles.cuisineName}>{cuisine.name}</Text>
-                        <Text variant="bodySmall" style={[styles.cuisineCount, { color: COLORS.primary }]}>
-                          {cuisine.count}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </Card.Content>
-              </Card>
             </View>
 
             {/* My Recipes Section */}
@@ -369,59 +321,6 @@ export default function ProfileScreen() {
               )}
             </View>
 
-            {/* Pantry & Staples */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View>
-                  <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.primary }]}>
-                    My Pantry & Staples
-                  </Text>
-                  <Text variant="bodySmall" style={[styles.sectionSubtitle, { color: COLORS.textMuted }]}>
-                    Mark ingredients you usually have at home
-                  </Text>
-                </View>
-                <TouchableOpacity style={styles.addButton}>
-                  <MaterialCommunityIcons name="plus-circle" size={24} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.pantryGrid}>
-                {pantryItems.map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[
-                      styles.pantryItem,
-                      item.inPantry && { backgroundColor: COLORS.primary + "20" },
-                    ]}
-                  >
-                    <Text style={styles.pantryIcon}>{item.icon}</Text>
-                    <Text variant="bodySmall" style={styles.pantryName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    {item.inPantry && (
-                      <View style={[styles.checkmark, { backgroundColor: COLORS.primary }]}>
-                        <MaterialCommunityIcons name="check" size={12} color="#FFF" />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Card style={styles.pantryInfoCard}>
-                <Card.Content>
-                  <View style={styles.pantryInfoRow}>
-                    <MaterialCommunityIcons name="information-outline" size={20} color={COLORS.primary} />
-                    <Text variant="bodySmall" style={styles.pantryInfoText}>
-                      Having these items helps us suggest recipes that cost less and use what you already have.
-                    </Text>
-                  </View>
-                  <Text variant="bodySmall" style={[styles.pantryStats, { color: COLORS.primary }]}>
-                    12 recipes available with your pantry items
-                  </Text>
-                </Card.Content>
-              </Card>
-            </View>
-
             {/* Preferences */}
             <View style={styles.section}>
               <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.primary }]}>
@@ -483,63 +382,6 @@ export default function ProfileScreen() {
               </Card>
             </View>
 
-            {/* Social Layer */}
-            <View style={styles.section}>
-              <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.primary }]}>
-                Social
-              </Text>
-
-              <Card style={styles.socialStatsCard}>
-                <Card.Content>
-                  <View style={styles.socialStatsRow}>
-                    <TouchableOpacity style={styles.socialStatItem}>
-                      <Text style={[styles.socialStatValue, { color: COLORS.primary }]}>{socialData.friends}</Text>
-                      <Text variant="bodySmall" style={styles.socialStatLabel}>Friends</Text>
-                    </TouchableOpacity>
-                    <View style={styles.socialStatDivider} />
-                    <TouchableOpacity style={styles.socialStatItem}>
-                      <Text style={[styles.socialStatValue, { color: COLORS.primary }]}>{socialData.followers}</Text>
-                      <Text variant="bodySmall" style={styles.socialStatLabel}>Followers</Text>
-                    </TouchableOpacity>
-                    <View style={styles.socialStatDivider} />
-                    <TouchableOpacity style={styles.socialStatItem}>
-                      <Text style={[styles.socialStatValue, { color: COLORS.primary }]}>{socialData.following}</Text>
-                      <Text variant="bodySmall" style={styles.socialStatLabel}>Following</Text>
-                    </TouchableOpacity>
-                    <View style={styles.socialStatDivider} />
-                    <TouchableOpacity style={styles.socialStatItem}>
-                      <Text style={[styles.socialStatValue, { color: COLORS.primary }]}>{socialData.communities}</Text>
-                      <Text variant="bodySmall" style={styles.socialStatLabel}>Communities</Text>
-                    </TouchableOpacity>
-                  </View>
-                </Card.Content>
-              </Card>
-
-              <Card style={styles.activityFeedCard}>
-                <Card.Content>
-                  <Text variant="titleMedium" style={styles.activityFeedTitle}>Recent Activity</Text>
-                  {socialData.recentActivity.map((activity, index) => (
-                    <View key={index} style={styles.activityFeedItem}>
-                      <View style={styles.activityFeedAvatar}>
-                        <MaterialCommunityIcons
-                          name={activity.type === "friend" ? "account" : "account-group"}
-                          size={20}
-                          color={COLORS.primary}
-                        />
-                      </View>
-                      <View style={styles.activityFeedContent}>
-                        <Text variant="bodyMedium" style={{ color: COLORS.textPrimary }}>
-                          <Text style={{ fontWeight: "600" }}>{activity.name}</Text> {activity.action}
-                        </Text>
-                        <Text variant="bodySmall" style={[styles.activityFeedTime, { color: COLORS.textMuted }]}>
-                          {activity.time}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
-                </Card.Content>
-              </Card>
-            </View>
 
             {/* Visual Separator */}
             <View style={styles.settingsDivider}>
@@ -608,8 +450,9 @@ export default function ProfileScreen() {
             </View>
           </ScrollView>
 
-        <BottomNav />
-      </SafeAreaView>
+          <BottomNav />
+        </SafeAreaView>
+      </ImageBackground>
     </View>
   );
 }
@@ -745,7 +588,6 @@ const styles = StyleSheet.create({
   addButton: {
     padding: 4,
   },
-  // Activity Dashboard
   activityGrid: {
     gap: 12,
     marginBottom: 16,
@@ -781,40 +623,6 @@ const styles = StyleSheet.create({
   },
   activityCardSubtitle: {
     fontSize: 12,
-  },
-  cuisinesCard: {
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
-    elevation: 2,
-    shadowColor: COLORS.white,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.borderUnfocused,
-  },
-  cuisinesTitle: {
-    fontWeight: "600",
-    marginBottom: 12,
-    color: COLORS.textPrimary,
-  },
-  cuisinesRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  cuisineItem: {
-    alignItems: "center",
-  },
-  cuisineFlag: {
-    fontSize: 32,
-    marginBottom: 4,
-  },
-  cuisineName: {
-    marginBottom: 2,
-    color: COLORS.textPrimary,
-  },
-  cuisineCount: {
-    fontWeight: "600",
   },
   // Recipe Tabs
   tabContainer: {
@@ -880,63 +688,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     color: COLORS.textPrimary,
   },
-  // Pantry
-  pantryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
-  },
-  pantryItem: {
-    width: (width - 56) / 3,
-    aspectRatio: 1,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 8,
-    position: "relative",
-  },
-  pantryIcon: {
-    fontSize: 32,
-    marginBottom: 4,
-  },
-  pantryName: {
-    textAlign: "center",
-    fontSize: 11,
-    color: COLORS.textPrimary,
-  },
-  checkmark: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pantryInfoCard: {
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: COLORS.borderUnfocused,
-  },
-  pantryInfoRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-  },
-  pantryInfoText: {
-    flex: 1,
-    marginLeft: 8,
-    lineHeight: 18,
-    color: COLORS.textPrimary,
-  },
-  pantryStats: {
-    fontWeight: "600",
-    marginTop: 4,
-  },
   // Preferences
   preferencesCard: {
     borderRadius: 16,
@@ -970,71 +721,6 @@ const styles = StyleSheet.create({
   preferenceDivider: {
     marginVertical: 4,
     backgroundColor: COLORS.borderUnfocused,
-  },
-  // Social
-  socialStatsCard: {
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
-    elevation: 2,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.borderUnfocused,
-  },
-  socialStatsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-  socialStatItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  socialStatDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: COLORS.borderUnfocused,
-  },
-  socialStatValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  socialStatLabel: {
-    opacity: 0.7,
-    color: COLORS.textPrimary,
-  },
-  activityFeedCard: {
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: COLORS.borderUnfocused,
-  },
-  activityFeedTitle: {
-    fontWeight: "600",
-    marginBottom: 12,
-    color: COLORS.textPrimary,
-  },
-  activityFeedItem: {
-    flexDirection: "row",
-    marginBottom: 16,
-  },
-  activityFeedAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  activityFeedContent: {
-    flex: 1,
-  },
-  activityFeedTime: {
-    marginTop: 4,
-    fontSize: 12,
   },
   // Settings
   settingsDivider: {

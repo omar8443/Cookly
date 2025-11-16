@@ -1,5 +1,7 @@
 
-const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+// For client-side (Expo) usage we MUST use an EXPO_PUBLIC_ variable so it gets bundled.
+// The Node script uses process.env.PEXELS_API_KEY separately via dotenv.
+const PEXELS_API_KEY = process.env.EXPO_PUBLIC_PEXELS_API_KEY;
 
 if (!PEXELS_API_KEY && __DEV__) {
   // eslint-disable-next-line no-console

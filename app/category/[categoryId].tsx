@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  ImageBackground,
-  TouchableOpacity,
-} from "react-native";
+import { View, StyleSheet, ScrollView, ImageBackground, TouchableOpacity } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,7 +7,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import BottomNav from "@/components/BottomNav";
 import RecipeGrid from "@/components/RecipeGrid";
 import { getRecipesByCategory } from "@/data/recipes";
-import { COLORS, COOKING_BACKGROUND_IMAGE } from "@/constants/colors";
+import { CATEGORY_BACKGROUND_IMAGES, COLORS, COOKING_BACKGROUND_IMAGE } from "@/constants/colors";
 import { commonBackgroundStyles } from "@/constants/styles";
 
 // Emoji mapping by recipe category name (keep in sync with index.tsx)
@@ -36,6 +30,8 @@ export default function CategoryScreen() {
   const recipeCategory = categoryId || "";
   const categoryName = recipeCategory || "Category";
   const categoryEmoji = CATEGORY_EMOJIS[recipeCategory] || "🍽️";
+  const categoryBackground =
+    CATEGORY_BACKGROUND_IMAGES[recipeCategory] ?? COOKING_BACKGROUND_IMAGE;
 
   // Get recipes for this category
   const recipes = getRecipesByCategory(recipeCategory);
@@ -51,7 +47,7 @@ export default function CategoryScreen() {
   return (
     <View style={commonBackgroundStyles.container}>
       <ImageBackground
-        source={{ uri: COOKING_BACKGROUND_IMAGE }}
+        source={{ uri: categoryBackground }}
         style={commonBackgroundStyles.backgroundImage}
         resizeMode="cover"
       >

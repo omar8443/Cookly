@@ -24,6 +24,7 @@ import {
 } from "@/data/recipes";
 import { COLORS, COOKING_BACKGROUND_IMAGE } from "@/constants/colors";
 import { commonBackgroundStyles, CATEGORY_SCREEN_TOKENS } from "@/constants/styles";
+import { getRecipeImage } from "@/lib/images";
 
 // Emoji mapping by recipe category name
 const CATEGORY_EMOJIS: Record<string, string> = {
@@ -77,32 +78,19 @@ const CARD_WIDTH = (width - CARD_PADDING * 2 - CARD_GAP) / 2;
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
-  // Animation for Add Recipe button press
-  const addButtonScale = useRef(new Animated.Value(1)).current;
   const cardEntrance = useRef(categories.map(() => new Animated.Value(0))).current;
   const [featuredRecipes, setFeaturedRecipes] = useState(getRandomFeaturedRecipes);
+  const [categoryImageUrls, setCategoryImageUrls] = useState<Record<string, string | undefined>>(
+    () =>
+      categories.reduce((acc, category) => {
+        const recipesInCategory = getRecipesByCategory(category.name);
+        acc[category.name] = recipesInCategory[0]?.imageUrl;
+        return acc;
+      }, {} as Record<string, string | undefined>)
+  );
 
   const handleCategoryPress = (categoryId: string) => {
     router.push(`/category/${categoryId}` as any);
-  };
-
-  const handleAddRecipe = () => {
-    // Animate button press
-    Animated.sequence([
-      Animated.timing(addButtonScale, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(addButtonScale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    
-    console.log("Add recipe pressed");
-    // TODO: Navigate to add recipe screen
   };
 
   const handleRecipePress = (recipeId: string) => {
@@ -122,6 +110,38 @@ export default function HomeScreen() {
       )
     ).start();
   }, [cardEntrance]);
+
+  // If a category does not have an imageUrl derived from recipes,
+  // lazily fetch one from Pexels using the category name.
+  useEffect(() => {
+    categories.forEach((category) => {
+      const currentUrl = categoryImageUrls[category.name];
+      if (currentUrl) return;
+
+      let isMounted = true;
+
+      const loadImage = async () => {
+        try {
+          const url = await getRecipeImage(category.name);
+          if (isMounted) {
+            setCategoryImageUrls((prev) => ({
+              ...prev,
+              [category.name]: url,
+            }));
+          }
+        } catch (error) {
+          console.warn("Failed to fetch category image from Pexels:", error);
+        }
+      };
+
+      // eslint-disable-next-line no-floating-promises
+      loadImage();
+
+      return () => {
+        isMounted = false;
+      };
+    });
+  }, [categoryImageUrls]);
 
   return (
     <View style={commonBackgroundStyles.container}>
@@ -179,7 +199,7 @@ export default function HomeScreen() {
                     name={category.name}
                     emoji={category.emoji}
                     recipeCount={category.recipeCount}
-                    imageUri={CATEGORY_IMAGES[category.name]}
+                    imageUri={categoryImageUrls[category.name]}
                     onPress={() => handleCategoryPress(category.id)}
                     width={CARD_WIDTH}
                     containerStyle={animatedStyle}
@@ -188,25 +208,6 @@ export default function HomeScreen() {
               })}
             </View>
           </ScrollView>
-
-          {/* Floating Add Recipe Button */}
-          <Animated.View
-            style={[styles.addButtonWrapper, { transform: [{ scale: addButtonScale }] }]}
-          >
-            <View style={styles.addButtonBlur}>
-              <TouchableOpacity onPress={handleAddRecipe} activeOpacity={0.88}>
-                <LinearGradient
-                  colors={CATEGORY_SCREEN_TOKENS.primaryGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.addButtonGradient}
-                >
-                  <MaterialCommunityIcons name="plus" size={22} color="#FFFFFF" />
-                  <Text style={styles.addButtonText}>Add Recipe</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
 
           <BottomNav />
         </SafeAreaView>
@@ -263,31 +264,5 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: COLORS.textPrimary,
     fontWeight: "600",
-  },
-  addButtonWrapper: {
-    position: "absolute",
-    bottom: 88,
-    alignSelf: "center",
-    borderRadius: 999,
-    ...CATEGORY_SCREEN_TOKENS.cardShadow,
-  },
-  addButtonBlur: {
-    borderRadius: 999,
-    overflow: "hidden",
-  },
-  addButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 26,
-    paddingVertical: 14,
-    borderRadius: 999,
-    gap: 8,
-  },
-  addButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.3,
   },
 });
