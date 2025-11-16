@@ -256,7 +256,7 @@ export default function RecipeDetailScreen() {
                 <View style={styles.tagsContainer}>
                   {recipe.category && (
                     <Chip
-                      style={[styles.categoryChip, { backgroundColor: COLORS.primary }]}
+                      style={[styles.categoryChip, { backgroundColor: "rgba(148, 163, 184, 0.35)" }]}
                       textStyle={{ color: COLORS.white, fontWeight: "700" }}
                     >
                       {recipe.category}
@@ -264,7 +264,7 @@ export default function RecipeDetailScreen() {
                   )}
                   {recipe.cuisine && (
                     <Chip
-                      style={[styles.cuisineChip, { backgroundColor: COLORS.primary }]}
+                      style={[styles.cuisineChip, { backgroundColor: "rgba(148, 163, 184, 0.35)" }]}
                       textStyle={{ color: COLORS.white, fontWeight: "700" }}
                     >
                       {recipe.cuisine}
@@ -539,7 +539,7 @@ export default function RecipeDetailScreen() {
                   </Text>
                   {recipe.ingredients.map((ingredient: string, index: number) => (
                     <View key={index} style={styles.ingredientItem}>
-                      <View style={[styles.bullet, { backgroundColor: COLORS.primary }]} />
+                      <View style={[styles.bullet, { backgroundColor: COLORS.white }]} />
                       <Text variant="bodyLarge" style={[styles.ingredientText, { color: COLORS.textPrimary }]}>
                         {ingredient}
                       </Text>
@@ -558,11 +558,14 @@ export default function RecipeDetailScreen() {
                     {recipe.instructions.map((step: string, index: number) => (
                       <View key={index} style={styles.instructionItem}>
                         <View style={[styles.stepBadge, { borderColor: COLORS.primary }]}>
-                          <Text style={[styles.stepBadgeText, { color: COLORS.primary }]}>
+                          <Text style={[styles.stepBadgeText, { color: COLORS.white }]}>
                             {index + 1}
                           </Text>
                         </View>
-                        <Text variant="bodyLarge" style={[styles.instructionText, { color: COLORS.textPrimary }]}>
+                        <Text
+                          variant="bodyLarge"
+                          style={[styles.instructionText, { color: COLORS.textPrimary }]}
+                        >
                           {step}
                         </Text>
                       </View>

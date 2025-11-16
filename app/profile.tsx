@@ -1,15 +1,17 @@
 import BottomNav from "@/components/BottomNav";
 import RecipeCard from "@/components/RecipeCard";
+import { COLORS, PROFILE_BACKGROUND_IMAGE } from "@/constants/colors";
+import { commonBackgroundStyles } from "@/constants/styles";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserStreak, UserStreakData } from "@/lib/streaks";
-import { Pantry } from "@/types/pantry";
+import { normalizeIngredientKey } from "@/data/storeInventory";
 import {
   addToPantry,
   getUserPantry,
   isIngredientInPantry,
   removeFromPantry,
 } from "@/lib/pantry";
-import { normalizeIngredientKey } from "@/data/storeInventory";
+import { getUserStreak, UserStreakData } from "@/lib/streaks";
+import { Pantry } from "@/types/pantry";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -34,10 +36,9 @@ import {
   useTheme,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { COLORS, PROFILE_BACKGROUND_IMAGE } from "@/constants/colors";
-import { commonBackgroundStyles } from "@/constants/styles";
 
-const PROFILE_PRIMARY = "#1d4ed8"; // Dark blue accent for profile screen
+// Brand-aligned accent for the profile screen
+const PROFILE_PRIMARY = COLORS.accent;
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 52) / 2; // 2 columns with padding and gap
@@ -57,7 +58,7 @@ const pastOrders: Array<{
   date?: string;
 }> = [];
 
-// Very small curated list of common pantry staples for quick toggling
+// Very small curated list of pantry staples for quick toggling
 const BASIC_PANTRY_INGREDIENTS: string[] = [
   "Eggs",
   "Milk",
@@ -165,13 +166,6 @@ export default function ProfileScreen() {
       }
     }
   };
-
-  const renderStatsCard = (icon: string, value: string | number, label: string, color?: string) => (
-    <View style={styles.quickStatItem}>
-      <Text style={[styles.quickStatValue, { color: color || PROFILE_PRIMARY }]}>{value}</Text>
-      <Text style={[styles.quickStatLabel, { color: COLORS.textMuted }]}>{label}</Text>
-    </View>
-  );
 
   const renderActivityCard = (
     title: string,
@@ -307,7 +301,10 @@ export default function ProfileScreen() {
 
             {/* Cooking Activity Dashboard */}
             <View style={[styles.section, styles.sectionTightBelow]}>
-              <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.textPrimary }]}>
+              <Text
+                variant="titleLarge"
+                style={[styles.sectionTitle, { color: COLORS.textPrimary }]}
+              >
                 Cooking Activity
               </Text>
 
@@ -315,7 +312,8 @@ export default function ProfileScreen() {
                 {renderActivityCard(
                   "Streak",
                   (() => {
-                    const days = streakData?.currentStreak ?? cookingStats.currentStreak;
+                    const days =
+                      streakData?.currentStreak ?? cookingStats.currentStreak;
                     return `${days} day${days === 1 ? "" : "s"}`;
                   })(),
                   "Cook consistently to keep your streak going.",
@@ -396,11 +394,14 @@ export default function ProfileScreen() {
                             styles.preferenceChip,
                             budgetLabel === "Not set" && {
                               backgroundColor: "transparent",
-                              borderColor: "#FFFFFF",
+                              borderColor: COLORS.borderUnfocused,
                             },
                           ]}
                           textStyle={{
-                            color: budgetLabel === "Not set" ? "#FFFFFF" : COLORS.textPrimary,
+                            color:
+                              budgetLabel === "Not set"
+                                ? COLORS.textMuted
+                                : COLORS.textPrimary,
                           }}
                         >
                           {budgetLabel}
@@ -422,13 +423,13 @@ export default function ProfileScreen() {
                             styles.preferenceChip,
                             defaultServingSize === "Not set" && {
                               backgroundColor: "transparent",
-                              borderColor: "#FFFFFF",
+                              borderColor: COLORS.borderUnfocused,
                             },
                           ]}
                           textStyle={{
                             color:
                               defaultServingSize === "Not set"
-                                ? "#FFFFFF"
+                                ? COLORS.textMuted
                                 : COLORS.textPrimary,
                           }}
                         >
@@ -477,16 +478,10 @@ export default function ProfileScreen() {
                         </View>
                       )}
 
-                      {/* Quick add/remove for common staples */}
+                      {/* Quick add/remove for pantry staples */}
                       {!pantryLoading && (
                         <View style={{ marginTop: 12 }}>
                           <View style={styles.pantryHeaderRow}>
-                            <Text
-                              variant="bodySmall"
-                              style={{ color: COLORS.textMuted }}
-                            >
-                              Common staples
-                            </Text>
                             <IconButton
                               icon="plus"
                               size={18}
@@ -787,9 +782,9 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   activityCardValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   activityCardSubtitle: {
     fontSize: 12,
@@ -905,6 +900,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
   },
   pantryLoadingText: {
     marginLeft: 8,
@@ -922,48 +918,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 6,
   },
-  pantrySubtitle: {
-    marginBottom: 8,
-  },
-  pantryLoadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  pantryLoadingText: {
-    marginLeft: 8,
-  },
-  pantryChipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 10,
-    gap: 10,
-  },
-  pantryChip: {
-    marginTop: 6,
-    marginRight: 10,
-    marginBottom: 10,
-  },
   pantryHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     marginBottom: 6,
   },
   pantryAddButton: {
     margin: 0,
-  },
-  customPantryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-    gap: 8,
-  },
-  customPantryInput: {
-    flex: 1,
-  },
-  customPantryButton: {
-    borderRadius: 999,
   },
   // Settings
   settingsDivider: {
