@@ -313,6 +313,8 @@ function RecipeCard({
   onPress: () => void;
 }) {
   const theme = useTheme();
+  const hasCategory = !!recipe.category;
+  const hasCuisine = !!recipe.cuisine;
 
   return (
     <TouchableOpacity
@@ -328,22 +330,28 @@ function RecipeCard({
           </Text>
 
           {/* Category and Cuisine Tags */}
-          <View style={styles.tagsContainer}>
-            <Chip
-              style={[styles.tag, { backgroundColor: COLORS.primary + "20" }]}
-              textStyle={[styles.tagText, { color: COLORS.primary }]}
-              compact
-            >
-              {recipe.category}
-            </Chip>
-            <Chip
-              style={[styles.tag, { backgroundColor: COLORS.accent + "20" }]}
-              textStyle={[styles.tagText, { color: COLORS.accent }]}
-              compact
-            >
-              {recipe.cuisine}
-            </Chip>
-          </View>
+          {(hasCategory || hasCuisine) && (
+            <View style={styles.tagsContainer}>
+              {hasCategory && (
+                <Chip
+                  style={[styles.tag, { backgroundColor: COLORS.primary }]}
+                  textStyle={[styles.tagText, { color: COLORS.white, fontWeight: "700" }]}
+                  compact
+                >
+                  {recipe.category}
+                </Chip>
+              )}
+              {hasCuisine && (
+                <Chip
+                  style={[styles.tag, { backgroundColor: COLORS.primary }]}
+                  textStyle={[styles.tagText, { color: COLORS.white, fontWeight: "700" }]}
+                  compact
+                >
+                  {recipe.cuisine}
+                </Chip>
+              )}
+            </View>
+          )}
 
           {/* Time */}
           <View style={styles.metaRow}>

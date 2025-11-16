@@ -30,8 +30,10 @@ export default function CategoryScreen() {
   const recipeCategory = categoryId || "";
   const categoryName = recipeCategory || "Category";
   const categoryEmoji = CATEGORY_EMOJIS[recipeCategory] || "🍽️";
+
+  // Use the Vegan category background image for all categories for a consistent look.
   const categoryBackground =
-    CATEGORY_BACKGROUND_IMAGES[recipeCategory] ?? COOKING_BACKGROUND_IMAGE;
+    CATEGORY_BACKGROUND_IMAGES["Vegan"] ?? COOKING_BACKGROUND_IMAGE;
 
   // Get recipes for this category
   const recipes = getRecipesByCategory(recipeCategory);

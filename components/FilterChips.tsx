@@ -27,17 +27,17 @@ export default function FilterChips({ filters, onFilterToggle }: FilterChipsProp
         return (
           <Chip
             key={filter}
-            selected={isActive}
+            selected={false}
             onPress={() => onFilterToggle(filter)}
             style={[
               styles.chip,
-              isActive && { backgroundColor: COLORS.primary + "40" },
+              isActive && { backgroundColor: "rgba(0,0,0,0.06)" },
             ]}
             textStyle={[
               styles.chipText,
-              isActive && { color: COLORS.primary },
+              { color: COLORS.black },
             ]}
-            mode={isActive ? "flat" : "outlined"}
+            mode="outlined"
           >
             {filter}
           </Chip>

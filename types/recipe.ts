@@ -26,6 +26,13 @@ export interface Recipe {
   // Detailed fields for recipe detail page
   ingredients: string[];
   instructions: string[];
+  // Macros for detail page nutrition section
+  macros: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
 }
 
 export interface SearchFilters {

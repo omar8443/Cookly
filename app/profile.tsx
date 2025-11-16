@@ -2,6 +2,14 @@ import BottomNav from "@/components/BottomNav";
 import RecipeCard from "@/components/RecipeCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserStreak, UserStreakData } from "@/lib/streaks";
+import { Pantry } from "@/types/pantry";
+import {
+  addToPantry,
+  getUserPantry,
+  isIngredientInPantry,
+  removeFromPantry,
+} from "@/lib/pantry";
+import { normalizeIngredientKey } from "@/data/storeInventory";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -15,7 +23,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Button, Card, Chip, Divider, List, Text, useTheme } from "react-native-paper";
+import {
+  Button,
+  Card,
+  Chip,
+  Divider,
+  IconButton,
+  List,
+  Text,
+  useTheme,
+} from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS, PROFILE_BACKGROUND_IMAGE } from "@/constants/colors";
 import { commonBackgroundStyles } from "@/constants/styles";
@@ -29,42 +46,64 @@ const cookingStats = {
   currentStreak: 5,
 };
 
-// Mock recipes
-const createdRecipes = [
-  { id: "1", title: "My Pasta Recipe", imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400", cookedCount: 3 },
-  { id: "2", title: "Homemade Pizza", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400", cookedCount: 5 },
-];
+// Past orders system placeholder: no past orders yet
+// In the future, this can be wired up to real order history from the backend.
+const pastOrders: Array<{
+  id: string;
+  title: string;
+  imageUrl?: string;
+  date?: string;
+}> = [];
 
-const favoriteRecipes = [
-  { id: "3", title: "Pancakes with Berries", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400" },
-  { id: "4", title: "Pasta Carbonara", imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400" },
-  { id: "5", title: "Chocolate Cake", imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400" },
-];
-
-const recentlyCooked = [
-  { id: "6", title: "Caesar Salad", imageUrl: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400", date: "2 days ago" },
-  { id: "7", title: "Grilled Chicken", imageUrl: "https://images.unsplash.com/photo-1532550907401-a498c2d314b7?w=400", date: "3 days ago" },
+// Very small curated list of common pantry staples for quick toggling
+const BASIC_PANTRY_INGREDIENTS: string[] = [
+  "Eggs",
+  "Milk",
+  "Olive oil",
+  "Rice",
+  "Pasta",
+  "Salt",
+  "Pepper",
+  "Butter",
+  "Onions",
+  "Garlic",
 ];
 
 export default function ProfileScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { user, userData, loading, signOut } = useAuth();
-  const [activeRecipeTab, setActiveRecipeTab] = useState<"created" | "favorites" | "recent">("favorites");
   const [streakData, setStreakData] = useState<UserStreakData | null>(null);
+  const [pantry, setPantry] = useState<Pantry>([]);
+  const [pantryLoading, setPantryLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const loadStreak = async () => {
+    const loadData = async () => {
       try {
         if (!user) return;
-        const data = await getUserStreak(user.uid);
-        setStreakData(data);
+
+        const [streak, userPantry] = await Promise.all([
+          getUserStreak(user.uid),
+          (async () => {
+            setPantryLoading(true);
+            try {
+              return await getUserPantry(user.uid);
+            } finally {
+              setPantryLoading(false);
+            }
+          })(),
+        ]);
+
+        setStreakData(streak);
+        setPantry(Array.isArray(userPantry) ? userPantry : []);
       } catch (error) {
-        console.error("Failed to load user streak:", error);
+        console.error("Failed to load profile data:", error);
+        setPantry([]);
+        setPantryLoading(false);
       }
     };
 
-    loadStreak();
+    loadData();
   }, [user]);
 
   const handleRecipePress = (recipeId: string) => {
@@ -80,16 +119,48 @@ export default function ProfileScreen() {
     }
   };
 
-  const getCurrentRecipes = () => {
-    switch (activeRecipeTab) {
-      case "created":
-        return createdRecipes;
-      case "favorites":
-        return favoriteRecipes;
-      case "recent":
-        return recentlyCooked;
-      default:
-        return favoriteRecipes;
+  const handleRemovePantryItem = async (ingredientKey: string) => {
+    if (!user) return;
+
+    // Optimistic update
+    setPantry((prev) => prev.filter((item) => item.ingredientKey !== ingredientKey));
+    try {
+      await removeFromPantry(user.uid, ingredientKey);
+    } catch (error) {
+      console.error("Failed to remove pantry item:", error);
+      // Best-effort: reload pantry on failure in the future if needed
+    }
+  };
+
+  const handleToggleBasicPantryItem = async (label: string) => {
+    if (!user) return;
+
+    const ingredientKey = normalizeIngredientKey(label);
+    const alreadyInPantry = isIngredientInPantry(pantry, ingredientKey);
+
+    if (alreadyInPantry) {
+      // Optimistic remove
+      setPantry((prev) =>
+        prev.filter((item) => item.ingredientKey !== ingredientKey)
+      );
+      try {
+        await removeFromPantry(user.uid, ingredientKey);
+      } catch (error) {
+        console.error("Failed to remove basic pantry item:", error);
+      }
+    } else {
+      const newItem = {
+        ingredientKey,
+        label,
+        addedAt: new Date().toISOString(),
+      };
+      // Optimistic add
+      setPantry((prev) => [...prev, newItem]);
+      try {
+        await addToPantry(user.uid, newItem);
+      } catch (error) {
+        console.error("Failed to add basic pantry item:", error);
+      }
     }
   };
 
@@ -137,7 +208,7 @@ export default function ProfileScreen() {
   const bio = (userData as any)?.bio || "";
   const dietaryTags = (userData as any)?.dietaryTags || [];
   const budgetLabel = (userData as any)?.budgetLabel || "Not set";
-  const skillLevel = (userData as any)?.skillLevel || "Beginner";
+  const defaultServingSize = (userData as any)?.defaultServingSize || "Not set";
 
   return (
     <View style={commonBackgroundStyles.container}>
@@ -186,9 +257,17 @@ export default function ProfileScreen() {
                     <View style={styles.locationRow}>
                       <MaterialCommunityIcons name="map-marker" size={16} color={COLORS.textMuted} />
                       <Text variant="bodyMedium" style={[styles.location, { color: COLORS.textMuted }]}>
-                        {location}
+                        {location === "Not set" ? "Add your address" : location}
                       </Text>
                     </View>
+                    <Text
+                      variant="bodySmall"
+                      style={[styles.addressHint, { color: COLORS.textMuted }]}
+                    >
+                      {location === "Not set"
+                        ? "Add your address so we can find supermarkets near you."
+                        : "We’ll use this address to find supermarkets near you."}
+                    </Text>
 
                     {bio && (
                       <Text variant="bodySmall" style={[styles.bio, { color: COLORS.textMuted }]}>
@@ -218,30 +297,14 @@ export default function ProfileScreen() {
                       >
                         {budgetLabel}
                       </Chip>
-                      <Chip
-                        mode="flat"
-                        style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]}
-                        textStyle={styles.tagText}
-                      >
-                        {skillLevel}
-                      </Chip>
                     </ScrollView>
-                  </View>
-
-                  <View style={styles.headerStatPill}>
-                    <Text style={[styles.headerStatValue, { color: "#FFB74D" }]}>
-                      {streakData?.currentStreak ?? cookingStats.currentStreak}
-                    </Text>
-                    <Text style={[styles.headerStatLabel, { color: COLORS.textMuted }]}>
-                      day streak
-                    </Text>
                   </View>
                 </View>
               </Card.Content>
             </Card>
 
             {/* Cooking Activity Dashboard */}
-            <View style={styles.section}>
+            <View style={[styles.section, styles.sectionTightBelow]}>
               <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.primary }]}>
                 Cooking Activity
               </Text>
@@ -249,7 +312,10 @@ export default function ProfileScreen() {
               <View style={styles.activityGrid}>
                 {renderActivityCard(
                   "Streak",
-                  `${streakData?.currentStreak ?? cookingStats.currentStreak} days`,
+                  (() => {
+                    const days = streakData?.currentStreak ?? cookingStats.currentStreak;
+                    return `${days} day${days === 1 ? "" : "s"}`;
+                  })(),
                   "Cook consistently to keep your streak going.",
                   "fire",
                   "#FF9800"
@@ -257,88 +323,36 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* My Recipes Section */}
+            {/* Past Orders Section */}
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text variant="titleLarge" style={[styles.sectionTitle, { color: COLORS.primary }]}>
-                  My Recipes
+              <View style={styles.sectionHeaderTight}>
+                <Text variant="titleLarge" style={[styles.sectionTitleTight, { color: COLORS.primary }]}>
+                  Past Orders
                 </Text>
               </View>
 
-              <View style={styles.tabContainer}>
-                <TouchableOpacity
-                  style={[styles.tab, activeRecipeTab === "created" && styles.activeTab]}
-                  onPress={() => setActiveRecipeTab("created")}
-                >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      activeRecipeTab === "created" && { color: COLORS.primary, fontWeight: "600" },
-                    ]}
-                  >
-                    Created
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.tab, activeRecipeTab === "favorites" && styles.activeTab]}
-                  onPress={() => setActiveRecipeTab("favorites")}
-                >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      activeRecipeTab === "favorites" && { color: COLORS.primary, fontWeight: "600" },
-                    ]}
-                  >
-                    Favorites
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.tab, activeRecipeTab === "recent" && styles.activeTab]}
-                  onPress={() => setActiveRecipeTab("recent")}
-                >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      activeRecipeTab === "recent" && { color: COLORS.primary, fontWeight: "600" },
-                    ]}
-                  >
-                    Recently Cooked
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {getCurrentRecipes().length > 0 ? (
+              {pastOrders.length > 0 ? (
                 <View style={styles.recipesGrid}>
-                  {getCurrentRecipes().map((recipe) => (
-                    <View key={recipe.id} style={[styles.recipeCard, { width: CARD_WIDTH }]}>
+                  {pastOrders.map((order) => (
+                    <View key={order.id} style={[styles.recipeCard, { width: CARD_WIDTH }]}>
                       <RecipeCard
-                        id={recipe.id}
-                        title={recipe.title}
-                        imageUrl={recipe.imageUrl}
-                        onPress={() => handleRecipePress(recipe.id)}
+                        id={order.id}
+                        title={order.title}
+                        imageUrl={order.imageUrl}
+                        onPress={() => handleRecipePress(order.id)}
                       />
-                      {activeRecipeTab === "recent" && "date" in recipe && typeof recipe.date === "string" && (
-                        <Text variant="bodySmall" style={styles.recipeDate}>
-                          {recipe.date}
-                        </Text>
-                      )}
-                      {activeRecipeTab === "created" && "cookedCount" in recipe && typeof recipe.cookedCount === "number" && (
-                        <View style={styles.cookedBadge}>
-                          <MaterialCommunityIcons name="silverware-fork-knife" size={12} color={COLORS.primary} />
-                          <Text variant="bodySmall" style={[styles.cookedCount, { color: COLORS.primary }]}>
-                            Cooked {recipe.cookedCount}x
-                          </Text>
-                        </View>
-                      )}
+                      <Text variant="bodySmall" style={styles.recipeDate}>
+                        {order.date}
+                      </Text>
                     </View>
                   ))}
                 </View>
               ) : (
-                <Card style={styles.emptyCard}>
+                  <Card style={styles.emptyCard}>
                   <Card.Content style={styles.emptyContent}>
                     <MaterialCommunityIcons name="book-outline" size={48} color={COLORS.textMuted} />
                     <Text variant="bodyMedium" style={styles.emptyText}>
-                      No {activeRecipeTab === "created" ? "created" : activeRecipeTab === "favorites" ? "favorite" : "recent"} recipes yet
+                      No past orders yet
                     </Text>
                   </Card.Content>
                 </Card>
@@ -373,9 +387,23 @@ export default function ProfileScreen() {
                     <MaterialCommunityIcons name="currency-usd" size={20} color={COLORS.primary} />
                     <View style={styles.preferenceContent}>
                       <Text variant="titleSmall" style={{ color: COLORS.textPrimary }}>Budget Range</Text>
-                      <Chip mode="flat" style={styles.preferenceChip}>
-                        {budgetLabel}
-                      </Chip>
+                      <View style={styles.preferenceValueContainer}>
+                        <Chip
+                          mode={budgetLabel === "Not set" ? "outlined" : "flat"}
+                          style={[
+                            styles.preferenceChip,
+                            budgetLabel === "Not set" && {
+                              backgroundColor: "transparent",
+                              borderColor: "#FFFFFF",
+                            },
+                          ]}
+                          textStyle={{
+                            color: budgetLabel === "Not set" ? "#FFFFFF" : COLORS.textPrimary,
+                          }}
+                        >
+                          {budgetLabel}
+                        </Chip>
+                      </View>
                     </View>
                   </View>
 
@@ -385,32 +413,114 @@ export default function ProfileScreen() {
                     <MaterialCommunityIcons name="account-group" size={20} color={COLORS.primary} />
                     <View style={styles.preferenceContent}>
                       <Text variant="titleSmall" style={{ color: COLORS.textPrimary }}>Default Serving Size</Text>
-                      <Chip mode="flat" style={styles.preferenceChip}>
-                        2 people
-                      </Chip>
+                      <View style={styles.preferenceValueContainer}>
+                        <Chip
+                          mode={defaultServingSize === "Not set" ? "outlined" : "flat"}
+                          style={[
+                            styles.preferenceChip,
+                            defaultServingSize === "Not set" && {
+                              backgroundColor: "transparent",
+                              borderColor: "#FFFFFF",
+                            },
+                          ]}
+                          textStyle={{
+                            color:
+                              defaultServingSize === "Not set"
+                                ? "#FFFFFF"
+                                : COLORS.textPrimary,
+                          }}
+                        >
+                          {defaultServingSize}
+                        </Chip>
+                      </View>
                     </View>
                   </View>
 
-                  <Divider style={styles.preferenceDivider} />
-
-                  <View style={styles.preferenceRow}>
-                    <MaterialCommunityIcons name="silverware-fork-knife" size={20} color={COLORS.primary} />
-                    <View style={styles.preferenceContent}>
-                      <Text variant="titleSmall" style={{ color: COLORS.textPrimary }}>Cooking Skill Level</Text>
-                      <Chip mode="flat" style={styles.preferenceChip}>
-                        {skillLevel}
-                      </Chip>
-                    </View>
-                  </View>
                 </Card.Content>
               </Card>
             </View>
 
+            {/* Pantry */}
+            <View style={styles.section}>
+              <Text
+                variant="titleLarge"
+                style={[styles.sectionTitle, { color: COLORS.primary }]}
+              >
+                Pantry
+              </Text>
 
-            {/* Visual Separator */}
-            <View style={styles.settingsDivider}>
-              <Divider style={styles.divider} />
+              <Card style={styles.preferencesCard}>
+                <Card.Content>
+                  {!user ? (
+                    <Text
+                      variant="bodyMedium"
+                      style={{ color: COLORS.textMuted }}
+                    >
+                      Sign in to manage your common pantry staples.
+                    </Text>
+                  ) : (
+                    <>
+                      {pantryLoading && (
+                        <View style={styles.pantryLoadingRow}>
+                          <ActivityIndicator size="small" color={COLORS.primary} />
+                          <Text
+                            variant="bodySmall"
+                            style={[
+                              styles.pantryLoadingText,
+                              { color: COLORS.textMuted },
+                            ]}
+                          >
+                            Loading your pantry...
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* Quick add/remove for common staples */}
+                      {!pantryLoading && (
+                        <View style={{ marginTop: 12 }}>
+                          <View style={styles.pantryHeaderRow}>
+                            <Text
+                              variant="bodySmall"
+                              style={{ color: COLORS.textMuted }}
+                            >
+                              Common staples
+                            </Text>
+                            <IconButton
+                              icon="plus"
+                              size={18}
+                              iconColor={COLORS.textMuted}
+                              style={styles.pantryAddButton}
+                              onPress={() => router.push("/pantry-add" as any)}
+                            />
+                          </View>
+                          <View style={styles.pantryChipsRow}>
+                            {BASIC_PANTRY_INGREDIENTS.map((label) => {
+                              const key = normalizeIngredientKey(label);
+                              const selected = isIngredientInPantry(pantry, key);
+                              return (
+                                <Chip
+                                  key={key}
+                                  mode={selected ? "flat" : "outlined"}
+                                  selected={selected}
+                                  style={styles.pantryChip}
+                                  textStyle={{
+                                    color: "#000000",
+                                  }}
+                                  onPress={() => handleToggleBasicPantryItem(label)}
+                                >
+                                  {label}
+                                </Chip>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      )}
+                    </>
+                  )}
+                </Card.Content>
+              </Card>
             </View>
+
 
             {/* Account & App Settings */}
             <View style={styles.section}>
@@ -598,25 +708,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 16,
   },
-  headerStatPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.85)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-    alignItems: "center",
-    minWidth: 86,
-  },
-  headerStatValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  headerStatLabel: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+  addressHint: {
+    marginBottom: 8,
   },
   quickStatItem: {
     alignItems: "center",
@@ -640,9 +733,19 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 16,
   },
+  sectionHeaderTight: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
   sectionTitle: {
     fontWeight: "600",
     marginBottom: 16,
+  },
+  sectionTitleTight: {
+    fontWeight: "600",
+    marginBottom: 8,
   },
   sectionSubtitle: {
     marginTop: 4,
@@ -653,6 +756,9 @@ const styles = StyleSheet.create({
   activityGrid: {
     gap: 12,
     marginBottom: 16,
+  },
+  sectionTightBelow: {
+    marginBottom: 20,
   },
   activityCard: {
     borderRadius: 16,
@@ -737,7 +843,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "rgba(0, 0, 0, 0.85)",
     elevation: 1,
-    marginTop: 16,
+    marginTop: 0,
     borderWidth: 1,
     borderColor: COLORS.borderUnfocused,
   },
@@ -764,29 +870,102 @@ const styles = StyleSheet.create({
   },
   preferenceRow: {
     flexDirection: "row",
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   preferenceContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 14,
+  },
+  preferenceValueContainer: {
+    marginTop: 8,
+    alignItems: "flex-start",
   },
   chipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 8,
-    gap: 8,
+    marginTop: 10,
+    gap: 10,
   },
   preferenceChip: {
-    marginRight: 8,
-    marginBottom: 8,
+    marginTop: 6,
+    marginRight: 10,
+    marginBottom: 10,
   },
   preferenceDivider: {
     marginVertical: 4,
     backgroundColor: COLORS.borderUnfocused,
   },
+  pantrySubtitle: {
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  pantryLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pantryLoadingText: {
+    marginLeft: 8,
+  },
+  pantryChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+    gap: 10,
+  },
+  pantryChip: {
+    marginTop: 6,
+    marginRight: 10,
+    marginBottom: 10,
+    borderRadius: 999,
+    paddingHorizontal: 6,
+  },
+  pantrySubtitle: {
+    marginBottom: 8,
+  },
+  pantryLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  pantryLoadingText: {
+    marginLeft: 8,
+  },
+  pantryChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 10,
+    gap: 10,
+  },
+  pantryChip: {
+    marginTop: 6,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  pantryHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  pantryAddButton: {
+    margin: 0,
+  },
+  customPantryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    gap: 8,
+  },
+  customPantryInput: {
+    flex: 1,
+  },
+  customPantryButton: {
+    borderRadius: 999,
+  },
   // Settings
   settingsDivider: {
-    marginVertical: 24,
+    marginVertical: 12,
     paddingHorizontal: 20,
   },
   divider: {
@@ -810,7 +989,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderUnfocused,
   },
   logoutContainer: {
-    marginTop: 16,
+    marginTop: 32,
   },
   logoutButton: {
     borderRadius: 12,

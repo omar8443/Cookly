@@ -40,11 +40,23 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   Vegan: "🥗",
 };
 
+// Derive category images in the same way as the Home screen:
+// from the first recipe image in each category.
+const SEARCH_CATEGORY_IMAGES: Record<string, string | undefined> = getRecipeCategories().reduce(
+  (acc, categoryName) => {
+    const recipesInCategory = getRecipesByCategory(categoryName);
+    acc[categoryName] = recipesInCategory[0]?.imageUrl;
+    return acc;
+  },
+  {} as Record<string, string | undefined>
+);
+
 const searchCategories = getRecipeCategories().map((categoryName) => ({
   id: categoryName,
   name: categoryName,
   emoji: CATEGORY_EMOJIS[categoryName] ?? "🍽️",
   recipeCount: getRecipesByCategory(categoryName).length,
+  imageUri: SEARCH_CATEGORY_IMAGES[categoryName],
 }));
 
 export default function SearchScreen() {
@@ -197,7 +209,7 @@ export default function SearchScreen() {
                         name={category.name}
                         emoji={category.emoji}
                         recipeCount={category.recipeCount}
-                        imageUri={undefined}
+                        imageUri={category.imageUri}
                         onPress={() => handleCategoryPress(category.id)}
                         width={"100%" as unknown as number}
                         containerStyle={styles.categoryListItem as any}
@@ -340,7 +352,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 0,
     minHeight: 32,
-    color: COLORS.textPrimary,
+    // Make search text clearly visible on white background
+    color: COLORS.black,
   },
   clearButton: {
     marginLeft: 8,

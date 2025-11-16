@@ -1,5 +1,12 @@
 import React, { useRef } from "react";
-import { TouchableOpacity, Animated, StyleSheet, ViewStyle, Image, View } from "react-native";
+import {
+  TouchableOpacity,
+  Animated,
+  StyleSheet,
+  ViewStyle,
+  ImageBackground,
+  View,
+} from "react-native";
 import { Text } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "@/constants/colors";
@@ -60,21 +67,45 @@ export default function CategoryCard({
         onPressOut={handlePressOut}
         activeOpacity={1}
       >
-        <LinearGradient
-          colors={COLORS.primaryGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.categoryCard}
-        >
-          <View style={styles.content}>
-            <Text variant="titleMedium" style={styles.categoryCardTitle} numberOfLines={1}>
-              {name}
-            </Text>
-            <Text style={styles.categoryCount}>
-              {recipeCount} {recipeCount === 1 ? "recipe" : "recipes"}
-            </Text>
-          </View>
-        </LinearGradient>
+        {imageUri ? (
+          <ImageBackground
+            source={{ uri: imageUri }}
+            style={styles.categoryCardImage}
+            imageStyle={styles.categoryCardImageInner}
+          >
+            <LinearGradient
+              colors={["rgba(15,23,42,0.1)", "rgba(15,23,42,0.9)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.categoryCard}
+            >
+              <View style={styles.content}>
+                <Text variant="titleMedium" style={styles.categoryCardTitle} numberOfLines={1}>
+                  {name}
+                </Text>
+                <Text style={styles.categoryCount}>
+                  {recipeCount} {recipeCount === 1 ? "recipe" : "recipes"}
+                </Text>
+              </View>
+            </LinearGradient>
+          </ImageBackground>
+        ) : (
+          <LinearGradient
+            colors={COLORS.primaryGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.categoryCard}
+          >
+            <View style={styles.content}>
+              <Text variant="titleMedium" style={styles.categoryCardTitle} numberOfLines={1}>
+                {name}
+              </Text>
+              <Text style={styles.categoryCount}>
+                {recipeCount} {recipeCount === 1 ? "recipe" : "recipes"}
+              </Text>
+            </View>
+          </LinearGradient>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -83,6 +114,13 @@ export default function CategoryCard({
 const styles = StyleSheet.create({
   categoryCardWrapper: {
     marginBottom: 12,
+  },
+  categoryCardImage: {
+    borderRadius: CATEGORY_SCREEN_TOKENS.cardRadius,
+    overflow: "hidden",
+  },
+  categoryCardImageInner: {
+    borderRadius: CATEGORY_SCREEN_TOKENS.cardRadius,
   },
   categoryCard: {
     borderRadius: CATEGORY_SCREEN_TOKENS.cardRadius,

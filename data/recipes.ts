@@ -7,6 +7,7 @@
  */
 
 // Static recipe type used for macros-based meals feature
+// Base recipe shape used for the static dataset and the Recipes page
 export type Recipe = {
   id: number;
   name: string;
@@ -24,6 +25,7 @@ export type Recipe = {
   };
 };
 
+// Full static recipes dataset with macros and instructions
 export const recipes: Recipe[] = [
   {
     id: 1,
@@ -2313,7 +2315,9 @@ export const recipes: Recipe[] = [
     category: "Gluten-Free",
     cuisine: "Mexican",
     timeMinutes: 25,
-    imageUrl: "https://images.pexels.com/photos/4609255/pexels-photo-4609255.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    // Image URL intentionally left blank so scripts/generateRecipeImages.ts
+    // can regenerate a fresh, stable image from the Pexels API.
+    imageUrl: "",
     ingredients: [
       "White fish (cod or tilapia)",
       "Corn tortillas",
@@ -2846,7 +2850,9 @@ export const recipes: Recipe[] = [
     category: "Seafood",
     cuisine: "American",
     timeMinutes: 35,
-    imageUrl: "https://images.pexels.com/photos/32446600/pexels-photo-32446600.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    // Image URL intentionally left blank so scripts/generateRecipeImages.ts
+    // can regenerate a fresh, stable image from the Pexels API.
+    imageUrl: "",
     ingredients: [
       "1/2 cup clams",
       "1 cup vegetable broth",
@@ -3079,7 +3085,9 @@ export const recipes: Recipe[] = [
     category: "Beef",
     cuisine: "Greek",
     timeMinutes: 25,
-    imageUrl: "https://images.pexels.com/photos/34434561/pexels-photo-34434561.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    // Image URL intentionally left blank so scripts/generateRecipeImages.ts
+    // can regenerate a fresh, stable image from the Pexels API.
+    imageUrl: "",
     ingredients: [
       "150 g beef, sliced",
       "2 pita breads",
@@ -3146,7 +3154,7 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 93,
+    id: 101,
     name: "Eggplant Lasagna",
     category: "Vegetarian",
     cuisine: "Italian",
@@ -3164,7 +3172,7 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 94,
+    id: 102,
     name: "Tempeh Stir-Fry",
     category: "Vegan",
     cuisine: "Asian",
@@ -3182,7 +3190,7 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 95,
+    id: 103,
     name: "Chicken Shawarma",
     category: "Chicken",
     cuisine: "Middle Eastern",
@@ -3200,7 +3208,7 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 96,
+    id: 104,
     name: "Beef Rendang",
     category: "Beef",
     cuisine: "Indonesian",
@@ -3218,7 +3226,7 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 97,
+    id: 105,
     name: "Pork Banh Mi",
     category: "Pork",
     cuisine: "Vietnamese",
@@ -3236,12 +3244,14 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 98,
+    id: 106,
     name: "Grilled Mahi Mahi",
     category: "Fish",
     cuisine: "Mediterranean",
     timeMinutes: 20,
-    imageUrl: "https://images.pexels.com/photos/3938947/pexels-photo-3938947.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    // Image URL intentionally left blank so scripts/generateRecipeImages.ts
+    // can regenerate a fresh, stable image from the Pexels API.
+    imageUrl: "",
     ingredients: [
       "200 g mahi mahi fillet",
       "1 cup roasted vegetables",
@@ -3253,7 +3263,7 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 99,
+    id: 107,
     name: "Seafood Paella",
     category: "Seafood",
     cuisine: "Spanish",
@@ -3271,7 +3281,7 @@ export const recipes: Recipe[] = [
   },
 
   {
-    id: 100,
+    id: 108,
     name: "Vegetable Biryani",
     category: "Vegetarian",
     cuisine: "Indian",
@@ -3289,26 +3299,104 @@ export const recipes: Recipe[] = [
   }
 ];
 
+// --- Public helpers used across the app ---
+// Raw recipes (used by the /recipes explorer screen)
+export const getRecipes = (): Recipe[] => recipes;
+
 // --- Compatibility helpers for existing search & category screens ---
-import type { Recipe as LegacyRecipe } from "@/types/recipe";
+import type { FilterType, Recipe as LegacyRecipe } from "@/types/recipe";
 import type { Recipe as StaticRecipe } from "./recipes";
 
-const toLegacyRecipe = (recipe: StaticRecipe): LegacyRecipe => ({
-  id: String(recipe.id),
-  title: recipe.name,
-  imageUrl: recipe.imageUrl,
-  category: recipe.category,
-  description: `${recipe.cuisine} · ${recipe.category}`,
-  cookTime: `${recipe.timeMinutes} min`,
-  prepTime: 0,
-  totalTime: recipe.timeMinutes,
-  servings: 1,
-  difficulty: "Easy",
-  cost: "$",
-  filters: [],
-  ingredients: recipe.ingredients,
-  instructions: recipe.instructions ?? [],
-});
+// Assign legacy search filters based on macros, cook time, ingredients, etc.
+function assignFiltersForRecipe(recipe: StaticRecipe): FilterType[] {
+  const filters = new Set<FilterType>();
+
+  const calories = recipe.macros?.calories ?? 0;
+  const protein = recipe.macros?.protein ?? 0;
+  const carbs = recipe.macros?.carbs ?? 0;
+  const time = recipe.timeMinutes;
+  const ingredientsCount = recipe.ingredients.length;
+
+  const lowerName = recipe.name.toLowerCase();
+  const lowerCategory = recipe.category.toLowerCase();
+  const lowerCuisine = recipe.cuisine.toLowerCase();
+  const ingredientText = recipe.ingredients.join(" ").toLowerCase();
+
+  // High Protein: clearly protein‑focused dishes
+  if (
+    protein >= 25 ||
+    (protein >= 20 && calories <= 650) ||
+    /protein|chicken breast|lean beef|tuna|mahi|salmon/.test(lowerName)
+  ) {
+    filters.add("High Protein");
+  }
+
+  // Diet: lighter, lower‑calorie meals or salads/bowls/soups
+  const looksLightByName =
+    /salad|bowl|soup|stir-fry|stir fry|grilled|baked|broth|veggie|vegetable/.test(
+      lowerName
+    );
+  const isVegCategory =
+    lowerCategory === "vegetarian" || lowerCategory === "vegan";
+
+  if (calories <= 500 || (looksLightByName && calories <= 650) || isVegCategory) {
+    filters.add("Diet");
+  }
+
+  // Student-Friendly: quick and not too many ingredients
+  if (time <= 30 && ingredientsCount <= 10) {
+    filters.add("Student-Friendly");
+  }
+
+  // Gourmet: longer or more complex dishes
+  const looksGourmetByName =
+    /steak|rendang|biryani|paella|shawarma|roast|risotto|curry/.test(lowerName);
+
+  if (time >= 45 || ingredientsCount >= 12 || looksGourmetByName) {
+    filters.add("Gourmet");
+  }
+
+  // Fallback: always give at least one tag so search filters are useful
+  if (filters.size === 0) {
+    if (time <= 30) {
+      filters.add("Student-Friendly");
+    } else if (calories <= 550) {
+      filters.add("Diet");
+    } else {
+      filters.add("Gourmet");
+    }
+  }
+
+  return Array.from(filters);
+}
+
+const toLegacyRecipe = (recipe: StaticRecipe): LegacyRecipe => {
+  // Ensure macros always exist so detail screen fields like calories/protein never break.
+  const macros = recipe.macros ?? {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+  };
+
+  return {
+    id: String(recipe.id),
+    title: recipe.name,
+    imageUrl: recipe.imageUrl,
+    category: recipe.category,
+    description: `${recipe.cuisine} · ${recipe.category}`,
+    cookTime: `${recipe.timeMinutes} min`,
+    prepTime: 0,
+    totalTime: recipe.timeMinutes,
+    servings: 1,
+    difficulty: "Easy",
+    cost: "$",
+    filters: assignFiltersForRecipe(recipe),
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions ?? [],
+    macros,
+  };
+};
 
 export const getAllRecipes = (): LegacyRecipe[] => recipes.map(toLegacyRecipe);
 
@@ -3317,3 +3405,8 @@ export const getRecipesByCategory = (category: string): LegacyRecipe[] =>
 
 export const getCategories = (): string[] =>
   Array.from(new Set(recipes.map((r) => r.category))).sort();
+
+// Look up a single recipe by its id (string, consistent with LegacyRecipe.id).
+// This returns the LegacyRecipe shape used throughout the app.
+export const getRecipeById = (id: string): LegacyRecipe | undefined =>
+  getAllRecipes().find((r) => r.id === id);

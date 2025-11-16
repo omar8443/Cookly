@@ -1,5 +1,6 @@
 import { Recipe } from "@/types/recipe";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { COLORS } from "@/constants/colors";
 import React from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Card, Chip, Text, useTheme } from "react-native-paper";
@@ -78,55 +79,49 @@ export default function RecipeCard(props: RecipeCardProps) {
             </Text>
 
             {/* Meta tags row */}
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <MaterialCommunityIcons
-                  name="clock-outline"
-                  size={16}
-                  color={theme.colors.onSurfaceVariant}
-                />
-                <Text
-                  variant="bodySmall"
-                  style={[styles.metaText, { color: theme.colors.onSurfaceVariant }]}
-                >
-                  {recipe.cookTime}
-                </Text>
-              </View>
+            {(recipe.cookTime || (recipe.cost && recipe.cost !== "$")) && (
+              <View style={styles.metaRow}>
+                {recipe.cookTime && (
+                  <View style={styles.metaItem}>
+                    <Text
+                      variant="bodySmall"
+                      style={[styles.metaText, { color: COLORS.black }]}
+                    >
+                      {recipe.cookTime}
+                    </Text>
+                  </View>
+                )}
 
-              {recipe.cost && (
-                <View style={styles.metaItem}>
-                  <Text
-                    variant="bodySmall"
-                    style={[styles.costText, { color: theme.colors.primary }]}
-                  >
-                    {recipe.cost}
-                  </Text>
-                </View>
-              )}
-            </View>
+                {recipe.cost && recipe.cost !== "$" && (
+                  <View style={styles.metaItem}>
+                    <Text
+                      variant="bodySmall"
+                      style={[styles.costText, { color: theme.colors.primary }]}
+                    >
+                      {recipe.cost}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
 
             {/* Filter tags */}
             {recipe.filters.length > 0 && (
               <View style={styles.tagsContainer}>
-                {recipe.filters.slice(0, 2).map((filter) => (
+                {recipe.filters.map((filter) => (
                   <Chip
                     key={filter}
-                    mode="flat"
+                    mode="outlined"
                     compact
-                    style={[styles.tag, { backgroundColor: theme.colors.primaryContainer }]}
-                    textStyle={[styles.tagText, { color: theme.colors.onPrimaryContainer }]}
+                    style={[
+                      styles.tag,
+                      { backgroundColor: "transparent", borderColor: COLORS.black },
+                    ]}
+                    textStyle={[styles.tagText, { color: COLORS.black }]}
                   >
                     {filter}
                   </Chip>
                 ))}
-                {recipe.filters.length > 2 && (
-                  <Text
-                    variant="bodySmall"
-                    style={[styles.moreTags, { color: theme.colors.onSurfaceVariant }]}
-                  >
-                    +{recipe.filters.length - 2}
-                  </Text>
-                )}
               </View>
             )}
           </View>

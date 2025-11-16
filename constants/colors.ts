@@ -22,27 +22,14 @@ export const COOKING_BACKGROUND_IMAGE =
   "https://images.pexels.com/photos/4259707/pexels-photo-4259707.jpeg?auto=compress&cs=tinysrgb&w=1200";
 
 // Category-specific modern cooking backgrounds
-export const CATEGORY_BACKGROUND_IMAGES: Record<string, string> = {
-  Chicken:
-    "https://images.pexels.com/photos/4106483/pexels-photo-4106483.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  Beef:
-    "https://images.pexels.com/photos/4106486/pexels-photo-4106486.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  Pork:
-    "https://images.pexels.com/photos/616354/pexels-photo-616354.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  Fish:
-    "https://images.pexels.com/photos/3296273/pexels-photo-3296273.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  Seafood:
-    "https://images.pexels.com/photos/3296273/pexels-photo-3296273.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  Vegetarian:
-    "https://images.pexels.com/photos/1437267/pexels-photo-1437267.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  Vegan:
-    "https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg?auto=compress&cs=tinysrgb&w=1200",
-};
+// Use the auto-generated mappings from Pexels so category images are
+// consistent across the app and easy to regenerate with the script.
+export { CATEGORY_BACKGROUND_IMAGES } from "./category-backgrounds.generated";
 
 // Search and profile backgrounds
 export const SEARCH_BACKGROUND_IMAGE =
-  "https://images.pexels.com/photos/7218636/pexels-photo-7218636.jpeg?auto=compress&cs=tinysrgb&w=1200";
+  "https://cdn.discordapp.com/attachments/1439532045461094420/1439556184062427300/image.png?ex=691af2ab&is=6919a12b&hm=81a92fbccffbfb48d71030f7e6f775c0e833ca2a1344c4ec12b46cd75a6c734d&";
+
 
 export const PROFILE_BACKGROUND_IMAGE =
-  "https://images.pexels.com/photos/8846005/pexels-photo-8846005.jpeg?auto=compress&cs=tinysrgb&w=1200";
-
+  "https://cdn.discordapp.com/attachments/1439532045461094420/1439556184062427300/image.png?ex=691af2ab&is=6919a12b&hm=81a92fbccffbfb48d71030f7e6f775c0e833ca2a1344c4ec12b46cd75a6c734d&";

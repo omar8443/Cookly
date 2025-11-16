@@ -9,6 +9,7 @@
  * - White, grey, and dark blue color scheme
  */
 
+import { PROFILE_BACKGROUND_IMAGE } from "@/constants/colors";
 import { auth, db } from "@/lib/firebase";
 import { mapFirebaseAuthError } from "@/utils/authErrors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -32,13 +33,10 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { ActivityIndicator, Snackbar, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const AUTH_BACKGROUND_IMAGE_URL = "https://images.pexels.com/photos/1640773/pexels-photo-1640773.jpeg?_gl=1*innzj*_ga*ODA0OTA0Njc0LjE3NjMyNjgxODk.*_ga_8JE65Q40S6*czE3NjMyNjgxODkkbzEkZzAkdDE3NjMyNjgxODkkajYwJGwwJGgw";
-const AUTH_BACKGROUND_IMAGE = { uri: AUTH_BACKGROUND_IMAGE_URL };
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -236,7 +234,7 @@ export default function AuthScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={AUTH_BACKGROUND_IMAGE}
+        source={{ uri: PROFILE_BACKGROUND_IMAGE }}
         style={styles.backgroundImage}
         resizeMode="cover"
       >

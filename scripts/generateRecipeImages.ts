@@ -1,7 +1,7 @@
+import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import dotenv from "dotenv";
-import { recipes, Recipe } from "../data/recipes";
+import { Recipe, recipes } from "../data/recipes";
 
 dotenv.config();
 
