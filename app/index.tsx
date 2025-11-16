@@ -1,165 +1,240 @@
-import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
-import { Text, FAB } from "react-native-paper";
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Animated,
+  Dimensions,
+  Easing,
+} from "react-native";
+import { Text, useTheme } from "react-native-paper";
 import { useRouter } from "expo-router";
-import { useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import BottomNav from "@/components/BottomNav";
-import RecipeCard from "@/components/RecipeCard";
+import CategoryCard from "@/components/CategoryCard";
+import { getCategories as getRecipeCategories, getRecipesByCategory } from "@/data/recipes";
+import { COLORS } from "@/constants/colors";
+import { commonBackgroundStyles, CATEGORY_SCREEN_TOKENS } from "@/constants/styles";
 
-// Mock data - replace with your actual data source
-const categories = [
-  {
-    id: "breakfast",
-    name: "Breakfast",
-    recipes: [
-      { id: "1", title: "Pancakes with Berries", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400" },
-      { id: "2", title: "Avocado Toast", imageUrl: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400" },
-      { id: "3", title: "French Toast", imageUrl: "https://images.unsplash.com/photo-1484723091739-30a097b8f16b?w=400" },
-    ],
-  },
-  {
-    id: "lunch",
-    name: "Lunch",
-    recipes: [
-      { id: "4", title: "Caesar Salad", imageUrl: "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400" },
-      { id: "5", title: "Grilled Chicken", imageUrl: "https://images.unsplash.com/photo-1532550907401-a498c2d314b7?w=400" },
-    ],
-  },
-  {
-    id: "dinner",
-    name: "Dinner",
-    recipes: [
-      { id: "6", title: "Pasta Carbonara", imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400" },
-      { id: "7", title: "Beef Steak", imageUrl: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400" },
-    ],
-  },
-  {
-    id: "desserts",
-    name: "Desserts",
-    recipes: [
-      { id: "8", title: "Chocolate Cake", imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400" },
-      { id: "9", title: "Ice Cream", imageUrl: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400" },
-    ],
-  },
-  {
-    id: "drinks",
-    name: "Drinks",
-    recipes: [
-      { id: "10", title: "Smoothie Bowl", imageUrl: "https://images.unsplash.com/photo-1553530666-ba11a7da1b8c?w=400" },
-    ],
-  },
-  {
-    id: "snacks",
-    name: "Snacks",
-    recipes: [
-      { id: "11", title: "Trail Mix", imageUrl: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400" },
-    ],
-  },
-];
+// Emoji mapping by recipe category name
+const CATEGORY_EMOJIS: Record<string, string> = {
+  Chicken: "🍗",
+  Beef: "🥩",
+  Pork: "🥓",
+  Fish: "🐟",
+  Seafood: "🦐",
+  Vegetarian: "🥦",
+  Vegan: "🥗",
+};
 
+// Build categories from all recipe categories in the static data
+const categories = getRecipeCategories().map((categoryName) => ({
+  id: categoryName,
+  name: categoryName,
+  emoji: CATEGORY_EMOJIS[categoryName] ?? "🍽️",
+  recipeCount: getRecipesByCategory(categoryName).length,
+}));
+
+const { width } = Dimensions.get("window");
+const CARD_PADDING = 22;
+const CARD_GAP = 12;
+const CARD_WIDTH = (width - CARD_PADDING * 2 - CARD_GAP) / 2;
+
+/**
+ * Categories screen visual system
+ * - Soft blue gradient accents with a subtle glassmorphism card layer over a dimmed food image.
+ * - Airy, centered header typography and generous vertical spacing for a modern 2025 feel.
+ * - Rounded, floating tiles and CTA with depth via shadows, blur, and light motion/entrance animations.
+ */
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
+  // Animation for Add Recipe button press
+  const addButtonScale = useRef(new Animated.Value(1)).current;
+  const cardEntrance = useRef(categories.map(() => new Animated.Value(0))).current;
 
-  const handleRecipePress = (recipeId: string) => {
-    router.push(`/recipe/${recipeId}` as any);
+  const handleCategoryPress = (categoryId: string) => {
+    router.push(`/category/${categoryId}` as any);
   };
 
   const handleAddRecipe = () => {
-    // Navigate to add recipe screen or show modal
+    // Animate button press
+    Animated.sequence([
+      Animated.timing(addButtonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(addButtonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
     console.log("Add recipe pressed");
+    // TODO: Navigate to add recipe screen
   };
 
+  useEffect(() => {
+    Animated.stagger(
+      90,
+      cardEntrance.map((value) =>
+        Animated.timing(value, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        })
+      )
+    ).start();
+  }, [cardEntrance]);
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["top"]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text variant="displaySmall" style={styles.title}>
-            My Recipes
-          </Text>
-        </View>
-
-        {categories.map((category) => (
-          <View key={category.id} style={styles.categorySection}>
-            <Text variant="titleLarge" style={[styles.categoryTitle, { color: theme.colors.primary }]}>
-              {category.name}
+    <View style={styles.root}>
+      <SafeAreaView style={commonBackgroundStyles.safeArea} edges={["top"]}>
+        <ScrollView
+          style={commonBackgroundStyles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text variant="headlineLarge" style={styles.title}>
+              Categories
             </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.recipeRow}
-            >
-              {category.recipes.map((recipe) => (
-                <View key={recipe.id} style={styles.recipeCardWrapper}>
-                  <RecipeCard
-                    id={recipe.id}
-                    title={recipe.title}
-                    imageUrl={recipe.imageUrl}
-                    onPress={() => handleRecipePress(recipe.id)}
-                  />
-                </View>
-              ))}
-            </ScrollView>
+            <View style={styles.titleUnderline} />
+            <Text variant="bodyMedium" style={styles.subtitle}>
+              What are you feeling today?
+            </Text>
           </View>
-        ))}
-      </ScrollView>
 
-      <FAB
-        icon="plus"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={handleAddRecipe}
-        label="Add Recipe"
-      />
+          <View style={styles.categoriesGrid}>
+            {categories.map((category, index) => {
+              const animatedValue = cardEntrance[index];
+              const animatedStyle = {
+                opacity: animatedValue,
+                transform: [
+                  {
+                    translateY: animatedValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [24, 0],
+                    }),
+                  },
+                ],
+              };
 
-      <BottomNav />
-    </SafeAreaView>
+              return (
+                <CategoryCard
+                  key={category.id}
+                  id={category.id}
+                  name={category.name}
+                  emoji={category.emoji}
+                  recipeCount={category.recipeCount}
+                  onPress={() => handleCategoryPress(category.id)}
+                  width={CARD_WIDTH}
+                  containerStyle={animatedStyle}
+                />
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        {/* Modern Floating Add Recipe Button */}
+        <Animated.View
+          style={[styles.addButtonWrapper, { transform: [{ scale: addButtonScale }] }]}
+        >
+          <View style={styles.addButtonBlur}>
+            <TouchableOpacity onPress={handleAddRecipe} activeOpacity={0.88}>
+              <LinearGradient
+                colors={CATEGORY_SCREEN_TOKENS.primaryGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.addButtonGradient}
+              >
+                <MaterialCommunityIcons name="plus" size={22} color="#FFFFFF" />
+                <Text style={styles.addButtonText}>Add Recipe</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        <BottomNav />
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
+    backgroundColor: COLORS.bg,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 160,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 26,
+    paddingBottom: 26,
+    alignItems: "center",
   },
   title: {
-    fontWeight: "700",
-  },
-  categorySection: {
-    marginBottom: 32,
-  },
-  categoryTitle: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
     fontWeight: "600",
+    fontSize: CATEGORY_SCREEN_TOKENS.titleFontSize,
+    letterSpacing: -0.8,
+    color: COLORS.textMain,
+    marginBottom: 8,
+    textAlign: "center",
   },
-  recipeRow: {
-    paddingHorizontal: 20,
-    gap: 16,
+  titleUnderline: {
+    width: 60,
+    height: 3,
+    backgroundColor: COLORS.primary,
+    borderRadius: 2,
+    marginBottom: 12,
   },
-  recipeCardWrapper: {
-    width: 200,
+  subtitle: {
+    fontSize: CATEGORY_SCREEN_TOKENS.subtitleFontSize,
+    color: COLORS.textMuted,
+    opacity: 1,
+    fontWeight: "400",
+    lineHeight: 22,
+    textAlign: "center",
   },
-  fab: {
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: CARD_PADDING,
+    gap: CARD_GAP,
+    justifyContent: "space-between",
+  },
+  addButtonWrapper: {
     position: "absolute",
-    right: 20,
-    bottom: 100,
-    borderRadius: 28,
+    bottom: 88,
+    alignSelf: "center",
+    borderRadius: 999,
+    ...CATEGORY_SCREEN_TOKENS.cardShadow,
+  },
+  addButtonBlur: {
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  addButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 26,
+    paddingVertical: 14,
+    borderRadius: 999,
+    gap: 8,
+  },
+  addButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
 });
-
-
