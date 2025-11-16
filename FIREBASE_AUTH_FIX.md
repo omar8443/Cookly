@@ -214,3 +214,5 @@ const handleSignUp = async () => {
 The sign-up flow should now work correctly without the `auth/configuration-not-found` error.
 
 
+
+

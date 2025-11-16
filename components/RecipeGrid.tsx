@@ -15,13 +15,13 @@ interface RecipeGridProps {
 }
 
 const { width } = Dimensions.get("window");
-const PADDING = 16;
-const GAP = 16;
+const PADDING = 18;
+const GAP = 14;
 const CARD_WIDTH = (width - PADDING * 2 - GAP) / 2;
 
 // Variable heights for masonry effect - alternating patterns
 const getHeightForIndex = (index: number): number => {
-  const heights = [220, 280, 240, 300, 260, 250, 290, 230, 270, 240, 300, 250];
+  const heights = [200, 250, 220, 260, 230, 225, 245, 215, 235, 220, 260, 230];
   return heights[index % heights.length];
 };
 

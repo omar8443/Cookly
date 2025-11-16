@@ -19,14 +19,33 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNav from "@/components/BottomNav";
 import FilterChips from "@/components/FilterChips";
 import RecipeCard from "@/components/RecipeCard";
-import { getAllRecipes } from "@/data/recipes";
+import { getAllRecipes, getCategories as getRecipeCategories, getRecipesByCategory } from "@/data/recipes";
 import { useRecipeSearch } from "@/hooks/useRecipeSearch";
 import { Recipe, SearchFilters } from "@/types/recipe";
 import { COLORS, SEARCH_BACKGROUND_IMAGE } from "@/constants/colors";
-import { commonBackgroundStyles } from "@/constants/styles";
+import { commonBackgroundStyles, CATEGORY_SCREEN_TOKENS } from "@/constants/styles";
+import CategoryCard from "@/components/CategoryCard";
 
 // Get all recipes from centralized database
 const allRecipes: Recipe[] = getAllRecipes();
+
+// Build categories list (same source as home) for stacked layout
+const CATEGORY_EMOJIS: Record<string, string> = {
+  Chicken: "🍗",
+  Beef: "🥩",
+  Pork: "🥓",
+  Fish: "🐟",
+  Seafood: "🦐",
+  Vegetarian: "🥦",
+  Vegan: "🥗",
+};
+
+const searchCategories = getRecipeCategories().map((categoryName) => ({
+  id: categoryName,
+  name: categoryName,
+  emoji: CATEGORY_EMOJIS[categoryName] ?? "🍽️",
+  recipeCount: getRecipesByCategory(categoryName).length,
+}));
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -79,6 +98,11 @@ export default function SearchScreen() {
   const handleRecipePress = (recipeId: string) => {
     Keyboard.dismiss();
     router.push(`/recipe/${recipeId}` as any);
+  };
+
+  const handleCategoryPress = (categoryId: string) => {
+    Keyboard.dismiss();
+    router.push(`/category/${categoryId}` as any);
   };
 
   const handleSubmitSearch = () => {
@@ -148,26 +172,39 @@ export default function SearchScreen() {
                 </View>
               )}
 
-              {/* Idle State - Centered with optional popular categories */}
+              {/* Idle State - Stacked categories list (Uber Eats style) */}
               {showIdleState && (
-                <View style={styles.idleContainer}>
-                  <Text variant="titleMedium" style={[styles.idleTitle, { color: COLORS.textMuted }]}>
-                    Popular Categories
+                <ScrollView
+                  style={styles.idleScroll}
+                  contentContainerStyle={styles.idleContainer}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <Text
+                    variant="titleMedium"
+                    style={[styles.idleTitle, { color: COLORS.textPrimary }]}
+                  >
+                    Browse by category
                   </Text>
-                  <View style={styles.popularChipsContainer}>
-                    {["Diet", "High Protein", "Student-Friendly", "Gourmet"].map((category) => (
-                      <Button
-                        key={category}
-                        mode="outlined"
-                        onPress={() => handleFilterToggle(category as keyof SearchFilters)}
-                        style={[styles.popularChip, { borderColor: COLORS.primary }]}
-                        labelStyle={[styles.popularChipLabel, { color: COLORS.primary }]}
-                      >
-                        {category}
-                      </Button>
+                  <Text variant="bodySmall" style={[styles.idleSubtitle, { color: COLORS.textMuted }]}>
+                    Tap a category to explore dishes, just like scrolling menus in a delivery app.
+                  </Text>
+
+                  <View style={styles.categoryList}>
+                    {searchCategories.map((category) => (
+                      <CategoryCard
+                        key={category.id}
+                        id={category.id}
+                        name={category.name}
+                        emoji={category.emoji}
+                        recipeCount={category.recipeCount}
+                        imageUri={undefined}
+                        onPress={() => handleCategoryPress(category.id)}
+                        width={"100%" as unknown as number}
+                        containerStyle={styles.categoryListItem as any}
+                      />
                     ))}
                   </View>
-                </View>
+                </ScrollView>
               )}
 
               {/* Results Area */}
@@ -313,15 +350,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   idleContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingTop: 40,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 120,
   },
   idleTitle: {
-    marginBottom: 20,
-    fontWeight: "600",
-    opacity: 0.7,
+    marginBottom: 8,
+    fontWeight: "700",
+    opacity: 0.95,
+  },
+  idleSubtitle: {
+    marginBottom: 16,
+    opacity: 0.8,
   },
   popularChipsContainer: {
     flexDirection: "row",
@@ -335,6 +375,16 @@ const styles = StyleSheet.create({
   },
   popularChipLabel: {
     fontSize: 14,
+  },
+  idleScroll: {
+    flex: 1,
+  },
+  categoryList: {
+    marginTop: 8,
+    gap: 12,
+  },
+  categoryListItem: {
+    marginBottom: 4,
   },
   resultsScrollView: {
     flex: 1,

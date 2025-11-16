@@ -153,65 +153,89 @@ export default function ProfileScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Profile Header Card */}
-            <Card style={styles.profileHeaderCard}>
-              <Card.Content style={styles.profileHeaderContent}>
-                <TouchableOpacity 
-                  style={styles.avatarWrapper}
-                  onPress={() => router.push("/edit-profile" as any)}
-                >
-                  <View style={[styles.avatarContainer, { backgroundColor: COLORS.primary + "20" }]}>
-                    {photoURL ? (
-                      <Image source={{ uri: photoURL }} style={styles.avatarImage} />
-                    ) : (
-                      <Text style={[styles.avatarText, { color: COLORS.primary }]}>
-                        {displayName.charAt(0).toUpperCase()}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={[styles.editBadge, { backgroundColor: COLORS.primary }]}>
-                    <MaterialCommunityIcons name="pencil" size={12} color="#FFF" />
-                  </View>
-                </TouchableOpacity>
-
-                <Text variant="headlineSmall" style={styles.name}>
+            {/* Profile Header - Uber Eats style */}
+            <View style={styles.headerRow}>
+              <View style={styles.headerTitleBlock}>
+                <Text variant="labelSmall" style={styles.headerLabel}>
+                  Profile
+                </Text>
+                <Text variant="headlineMedium" style={styles.headerTitle}>
                   {displayName}
                 </Text>
-
-                <View style={styles.locationRow}>
-                  <MaterialCommunityIcons name="map-marker" size={16} color={COLORS.textMuted} />
-                  <Text variant="bodyMedium" style={[styles.location, { color: COLORS.textMuted }]}>
-                    {location}
-                  </Text>
-                </View>
-
-                {bio && (
-                  <Text variant="bodySmall" style={[styles.bio, { color: COLORS.textMuted }]}>
-                    {bio}
-                  </Text>
-                )}
-
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagsContainer}>
-                  {dietaryTags.map((tag: string, index: number) => (
-                    <Chip key={index} mode="flat" style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]} textStyle={styles.tagText}>
-                      {tag}
-                    </Chip>
-                  ))}
-                  <Chip mode="flat" style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]} textStyle={styles.tagText}>
-                    {budgetLabel}
-                  </Chip>
-                  <Chip mode="flat" style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]} textStyle={styles.tagText}>
-                    {skillLevel}
-                  </Chip>
-                </ScrollView>
-
-                <View style={styles.quickStatsRow}>
-                  {renderStatsCard("🍳", cookingStats.dishesThisWeek, "This week")}
-                  {renderStatsCard(
-                    "🔥",
-                    `${streakData?.currentStreak ?? cookingStats.currentStreak}`,
-                    "Streak"
+              </View>
+              <TouchableOpacity
+                style={styles.headerAvatarTouch}
+                onPress={() => router.push("/edit-profile" as any)}
+              >
+                <View style={[styles.headerAvatarContainer, { backgroundColor: COLORS.primary + "20" }]}>
+                  {photoURL ? (
+                    <Image source={{ uri: photoURL }} style={styles.headerAvatarImage} />
+                  ) : (
+                    <Text style={[styles.headerAvatarText, { color: COLORS.primary }]}>
+                      {displayName.charAt(0).toUpperCase()}
+                    </Text>
                   )}
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <Card style={styles.profileHeaderCard}>
+              <Card.Content style={styles.profileHeaderContent}>
+                <View style={styles.headerInfoRow}>
+                  <View style={styles.headerInfoMain}>
+                    <View style={styles.locationRow}>
+                      <MaterialCommunityIcons name="map-marker" size={16} color={COLORS.textMuted} />
+                      <Text variant="bodyMedium" style={[styles.location, { color: COLORS.textMuted }]}>
+                        {location}
+                      </Text>
+                    </View>
+
+                    {bio && (
+                      <Text variant="bodySmall" style={[styles.bio, { color: COLORS.textMuted }]}>
+                        {bio}
+                      </Text>
+                    )}
+
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.tagsContainer}
+                    >
+                      {dietaryTags.map((tag: string, index: number) => (
+                        <Chip
+                          key={index}
+                          mode="flat"
+                          style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]}
+                          textStyle={styles.tagText}
+                        >
+                          {tag}
+                        </Chip>
+                      ))}
+                      <Chip
+                        mode="flat"
+                        style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]}
+                        textStyle={styles.tagText}
+                      >
+                        {budgetLabel}
+                      </Chip>
+                      <Chip
+                        mode="flat"
+                        style={[styles.tagChip, { backgroundColor: COLORS.primary + "20" }]}
+                        textStyle={styles.tagText}
+                      >
+                        {skillLevel}
+                      </Chip>
+                    </ScrollView>
+                  </View>
+
+                  <View style={styles.headerStatPill}>
+                    <Text style={[styles.headerStatValue, { color: "#FFB74D" }]}>
+                      {streakData?.currentStreak ?? cookingStats.currentStreak}
+                    </Text>
+                    <Text style={[styles.headerStatLabel, { color: COLORS.textMuted }]}>
+                      day streak
+                    </Text>
+                  </View>
                 </View>
               </Card.Content>
             </Card>
@@ -466,10 +490,51 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
-  // Profile Header
+  // Profile Header (Uber Eats style)
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  headerTitleBlock: {
+    flexDirection: "column",
+  },
+  headerLabel: {
+    textTransform: "uppercase",
+    fontWeight: "600",
+    letterSpacing: 1,
+    opacity: 0.7,
+    color: COLORS.textMuted,
+  },
+  headerTitle: {
+    marginTop: 4,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  headerAvatarTouch: {
+    padding: 2,
+  },
+  headerAvatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerAvatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  headerAvatarText: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
   profileHeaderCard: {
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 16,
     marginBottom: 24,
     borderRadius: 20,
     backgroundColor: "rgba(0, 0, 0, 0.85)",
@@ -482,40 +547,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderUnfocused,
   },
   profileHeaderContent: {
-    alignItems: "center",
-    paddingVertical: 24,
-  },
-  avatarWrapper: {
-    position: "relative",
-    marginBottom: 16,
-  },
-  avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  avatarText: {
-    fontSize: 40,
-    fontWeight: "700",
-  },
-  editBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: "rgba(0, 0, 0, 0.85)",
+    paddingVertical: 18,
+    paddingHorizontal: 16,
   },
   name: {
     fontWeight: "700",
@@ -537,8 +570,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   tagsContainer: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
   },
   tagChip: {
     marginRight: 8,
@@ -555,6 +588,35 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 20,
     marginTop: 8,
+  },
+  headerInfoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  headerInfoMain: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  headerStatPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    alignItems: "center",
+    minWidth: 86,
+  },
+  headerStatValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  headerStatLabel: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   quickStatItem: {
     alignItems: "center",
